@@ -61,7 +61,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setupViews()
 
         self.setWindowTitle("PyMona")
-        self.resize(1300, 670)
+        self.setGeometry(50, 50, 800, 600)
         
         #if file_names != None:
         #    self.openFiles(file_names)             
@@ -94,10 +94,14 @@ class MainWindow(QtGui.QMainWindow):
     def setupModels(self):
         """ Sets up table models """
         
-        self.all_results = []
         self.model = QtGui.QStandardItemModel(0, 2, self)
         self.model.setHeaderData(COL_ID,         QtCore.Qt.Horizontal, "ID")
         self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
+        
+        self.graphics_scene = QtGui.QGraphicsScene(self)
+        self.graphics_scene.setSceneRect(-200, -100, 400, 300)
+        
+        self.graphics_scene.addEllipse(50, 60, 100, 30)
         
             
     def loadModel(self, file_name):
@@ -119,11 +123,13 @@ class MainWindow(QtGui.QMainWindow):
         results_group_box = QtGui.QGroupBox("Results")
         central_splitter.addWidget(results_group_box)
         
-        
         results_layout = QtGui.QVBoxLayout()
         results_group_box.setLayout(results_layout)
 
-        # -- subtract table --
+        self.graphics_view = QtGui.QGraphicsView(self.graphics_scene)
+        results_layout.addWidget(self.graphics_view)
+
+        # -- table --
         
         data_group_box = QtGui.QGroupBox("Data")
         central_splitter.addWidget(data_group_box)
