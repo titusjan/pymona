@@ -99,9 +99,18 @@ class MainWindow(QtGui.QMainWindow):
         self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
         
         self.graphics_scene = QtGui.QGraphicsScene(self)
-        self.graphics_scene.setSceneRect(-200, -100, 400, 300)
+        self.graphics_scene.setSceneRect(-20, -20, 420, 340)
         
-        self.graphics_scene.addEllipse(50, 60, 100, 30)
+        target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
+        self.graphics_scene.addPixmap(target_pixmap)
+        
+        color = QtGui.QColor(255, 0, 0, 75)
+        pen = QtGui.QPen(color)
+        pen.setWidth(5)
+        pen.setStyle(QtCore.Qt.NoPen)
+        self.graphics_scene.addEllipse(50, 60, 100, 60, 
+            pen = pen, 
+            brush = QtGui.QBrush(color))
         
             
     def loadModel(self, file_name):
