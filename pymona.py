@@ -20,12 +20,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-COL_DIRNAME   = 0
-COL_BASENAME  = 1
-COL_LAMP      = 2
-COL_MSM_LABEL = 3
-COL_COLOR     = 4
-COL_STYLE     = 5
+COL_ID        = 0
+COL_NUM_GENES = 1
 
 
 class ComboBoxDelegate(QtGui.QItemDelegate):
@@ -67,16 +63,23 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle("PyMona")
         self.resize(1300, 670)
         
-        if file_names != None:
-            self.openFiles(file_names)             
+        #if file_names != None:
+        #    self.openFiles(file_names)             
+        
             
+    def about(self):
+        QtGui.QMessageBox.about(self, "About %s" % PROGRAM_NAME, ABOUT_MESSAGE)
+
+    def fileQuit(self):
+        self.close()
+
 
     def setupMenu(self):
         """ Sets up the main menu.
         """
         fileMenu = QtGui.QMenu("&File", self)
-        openAction = fileMenu.addAction("&Open...", self.openFiles)
-        openAction.setShortcut("Ctrl+O")
+        #openAction = fileMenu.addAction("&Open...", self.openFiles)
+        #openAction.setShortcut("Ctrl+O")
         quitAction = fileMenu.addAction("E&xit", self.fileQuit)
         quitAction.setShortcut("Ctrl+Q")
         
@@ -92,49 +95,16 @@ class MainWindow(QtGui.QMainWindow):
         """ Sets up table models """
         
         self.all_results = []
-        self.model = QtGui.QStandardItemModel(0, 4, self) # set nr of columns to 6 to include color & style
-
-        self.model.setHeaderData(COL_DIRNAME,   QtCore.Qt.Horizontal, "Location")
-        self.model.setHeaderData(COL_BASENAME,  QtCore.Qt.Horizontal, "File")
-        self.model.setHeaderData(COL_LAMP,      QtCore.Qt.Horizontal, "Lamp")
-        self.model.setHeaderData(COL_MSM_LABEL, QtCore.Qt.Horizontal, "Measurement label")
-        self.model.setHeaderData(COL_COLOR,     QtCore.Qt.Horizontal, "Color")
-        self.model.setHeaderData(COL_STYLE,     QtCore.Qt.Horizontal, "Style")  
-        
-         # The reference result (this changes when a new row is selected in the table)
-        self.ref_idx = 0
-        
-
-    def appendResult(self, file_name, result):
-        
-        row = len(self.all_results)
-        self.model.insertRow(row)
-        
-        dir_name, base_name = os.path.split(os.path.abspath(file_name))
-        self.model.setData(self.model.index(row, COL_DIRNAME), dir_name)
-        self.model.setData(self.model.index(row, COL_BASENAME), base_name)
-        self.model.setData(self.model.index(row, COL_LAMP), "lamp-{:d}".format(row))
-        self.model.setData(self.model.index(row, COL_MSM_LABEL), "measurement label {:d}".format(row))
-
-        self.model.setData(self.model.index(row, COL_COLOR), "color")
-        self.model.setData(self.model.index(row, COL_STYLE), "style")
-
-        self.all_results.append(result)
+        self.model = QtGui.QStandardItemModel(0, 2, self)
+        self.model.setHeaderData(COL_ID,         QtCore.Qt.Horizontal, "ID")
+        self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
         
             
     def loadModel(self, file_name):
         """ Loads the model data from a HDF-5 file"""
-        
+        assert False, "Not yet implemented"
         logger.debug('loading data from: {}'.format(file_name))
-        try:
-            result = read_stored_results_from_hdf5(file_name)
-        except Exception, ex:
-            logger.exception("Error opening: %s", ex)
-            QtGui.QMessageBox.warning(self, "Error opening file", str(ex))        
-            return
-        
-        self.appendResult(file_name, result)
-        self.onSubtractTableChanged() # sets self.subtracted_data and updates plots
+        pass
 
 
     def setupViews(self):
@@ -144,9 +114,9 @@ class MainWindow(QtGui.QMainWindow):
         central_splitter.setStretchFactor(1, 1)
         self.setCentralWidget(central_splitter)
         
-        # -- fit plot --
+        # -- canvas --
 
-        results_group_box = QtGui.QGroupBox("Fit results")
+        results_group_box = QtGui.QGroupBox("Results")
         central_splitter.addWidget(results_group_box)
         
         
@@ -155,90 +125,72 @@ class MainWindow(QtGui.QMainWindow):
 
         # -- subtract table --
         
-        subtract_group_box = QtGui.QGroupBox("Dark subtraction")
-        central_splitter.addWidget(subtract_group_box)
+        data_group_box = QtGui.QGroupBox("Data")
+        central_splitter.addWidget(data_group_box)
         
-        subtract_layout = QtGui.QVBoxLayout()
-        subtract_group_box.setLayout(subtract_layout)
+        data_layout = QtGui.QVBoxLayout()
+        data_group_box.setLayout(data_layout)
         
-        self.compare_table = QtGui.QTableView()  # TODO: rename
-        self.compare_table.setModel(self.model)
-        self.compare_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers) 
-        self.compare_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.compare_table.setColumnWidth(COL_DIRNAME, 400)
-        self.compare_table.setColumnWidth(COL_BASENAME, 200)
-        self.compare_table.setColumnWidth(COL_LAMP, 100)
-        self.compare_table.setColumnWidth(COL_MSM_LABEL, 200)
-        self.compare_table.setColumnWidth(COL_COLOR, 100)
-        self.compare_table.setColumnWidth(COL_STYLE, 100)
-        self.compare_table.horizontalHeader().setStretchLastSection(True)
+        self.genes_table = QtGui.QTableView()  
+        self.genes_table.setModel(self.model)
+        self.genes_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers) 
+        self.genes_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.genes_table.setColumnWidth(COL_ID, 400)
+        self.genes_table.setColumnWidth(COL_NUM_GENES, 200)
+        self.genes_table.horizontalHeader().setStretchLastSection(True)
         
-        selection_model = self.compare_table.selectionModel()
-        selection_model.selectionChanged.connect(self.onSelectionChanged)
+        selection_model = self.genes_table.selectionModel()
+        #selection_model.selectionChanged.connect(self.onSelectionChanged)
         
-        subtract_layout.addWidget(self.compare_table)
+        data_layout.addWidget(self.genes_table)
+
+        
+    def __not_used__openFiles(self, file_names=None):
+        
+        if not file_names:
+            file_names = QtGui.QFileDialog.getOpenFileNames(self,
+                    "Choose one or more data files", '', '*.h5')[0]
+        for file_name in file_names:
+            logger.info("Loading data from: {!r}".format(file_name))
+            #self.loadModel(file_name)
+            
+
   
-    def onSelectionChanged(self, selected=None, deselected=None):
+    def __not_used__onSelectionChanged(self, selected=None, deselected=None):
         """ Makes the selected result the reference result
         
             Called when a row is selected in the table.
         """
         logger.debug("onSubtractTableChanged")
-    
-        selection_model = self.compare_table.selectionModel()
+        
+        selection_model = self.genes_table.selectionModel()
         
         assert len(selection_model.selectedRows()) == 1, \
             "Only one row should be select, got: {}".format(len(selection_model.selectedRows()) )
         selection = selection_model.selectedRows()[0]
         self.ref_idx = selection.row()
         logger.debug("Reference is now: {}".format(self.ref_idx))
-
         
 
-    def onSubtractTableChanged(self, top_left_index=None, botrom_right_index=None):
+    def __not_used__onSubtractTableChanged(self, top_left_index=None, botrom_right_index=None):
         """ Called when an item in the dark subract table has changed
         """
         logger.debug("onSubtractTableChanged")
-        self.compare_table.selectRow(0)
+        pass
         
  
-    def getTableItem(self, row, col):
+    def __not_used__getTableItem(self, row, col):
         return self.model.data(self.model.index(row, col), Qt.DisplayRole)
-        
-    
-        
     
             
     def test(self):
         """ Simple function used to test stuff during run-time"""
         import inspect
         from pprint import pprint
-        from utils import print_class_tree
-        
         logger.debug('self.test()')
 
-        
-        
-    def openFiles(self, file_names=None):
-        if not file_names:
-            file_names = QtGui.QFileDialog.getOpenFileNames(self,
-                    "Choose one or more data files", '', '*.h5')[0]
 
-            print ("File names: {}".format(file_names))
-        for file_name in file_names:
-            logger.info("Loading data from: {!r}".format(file_name))
-            self.loadModel(file_name)
 
-            
-    def about(self):
-        QtGui.QMessageBox.about(self, "About %s" % PROGRAM_NAME, ABOUT_MESSAGE)
-
-    def fileQuit(self):
-        self.close()
-
-    #def closeEvent(self, ce):
-    #    self.fileQuit()
-        
 
 def main():
     
