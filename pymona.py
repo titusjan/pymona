@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """ GSTP Radiometer Analysis Tool
 
 """
@@ -80,6 +81,8 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = QtGui.QMenu("&File", self)
         #openAction = fileMenu.addAction("&Open...", self.openFiles)
         #openAction.setShortcut("Ctrl+O")
+        openAction = fileMenu.addAction("&Test...", self.test)
+        openAction.setShortcut("Ctrl+T")
         quitAction = fileMenu.addAction("E&xit", self.fileQuit)
         quitAction.setShortcut("Ctrl+Q")
         
@@ -99,16 +102,26 @@ class MainWindow(QtGui.QMainWindow):
         self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
         
         self.graphics_scene = QtGui.QGraphicsScene(self)
-        self.graphics_scene.setSceneRect(-20, -20, 420, 340)
+        #self.graphics_scene.setSceneRect(-20, -20, 420, 340)
+        self.graphics_scene.setSceneRect(0, 0, 300, 300)
+
+        if False:        
+            target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
+            self.graphics_scene.addPixmap(target_pixmap)
+            
+            color = QtGui.QColor(255, 0, 0, 75)
+            pen = QtGui.QPen(color)
+            pen.setWidth(5)
+            pen.setStyle(QtCore.Qt.NoPen)
+            self.graphics_scene.addEllipse(50, 60, 100, 60, 
+                pen = pen, 
+                brush = QtGui.QBrush(color))
         
-        target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
-        self.graphics_scene.addPixmap(target_pixmap)
-        
-        color = QtGui.QColor(255, 0, 0, 75)
+        color = QtGui.QColor(128, 64, 0, 255)
         pen = QtGui.QPen(color)
         pen.setWidth(5)
         pen.setStyle(QtCore.Qt.NoPen)
-        self.graphics_scene.addEllipse(50, 60, 100, 60, 
+        self.graphics_scene.addRect(-1, -1, 100, 100, 
             pen = pen, 
             brush = QtGui.QBrush(color))
         
@@ -200,12 +213,56 @@ class MainWindow(QtGui.QMainWindow):
             
     def test(self):
         """ Simple function used to test stuff during run-time"""
+        import numpy as np
         import inspect
         from pprint import pprint
-        logger.debug('self.test()')
+        logger.info('self.test()')
+        pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(1, 1, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
+        #pix_map.save('/Users/titusjan/Programming/genetic/pymona/test.png')
+        
+        rgba_image = pix_map.toImage()      # RGBA
+        logger.debug(rgba_image.format())
+        
+        #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB888)
+        rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
+        #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_Mono)
+        image = rgb_image
+        logger.debug(image.format())
+        logger.debug("image depth: {}".format(image.depth()))
+        
+        img_size = image.size()
+        logger.debug(img_size)
+        logger.debug(type(img_size))
+    
+        #buffer = image.bits()
+        buffer = image.constBits()
+        logger.debug(type(buffer))
+        logger.debug(len(buffer))
+        for idx, elem in enumerate(buffer[0:100]):
+            logger.debug("buffer[{0}] = {1} ({2} {2:x})".format(idx, elem, ord(elem)))
+        assert img_size.width() * img_size.height() * image.depth() == len(buffer) * 8, \
+            "size mismatch: {} != {}".format(img_size.width() * img_size.height() * image.depth(), len(buffer) * 8) 
 
 
+        #return # TODO: remove
 
+        img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
+        print (img_arr.shape)
+        print (img_arr[0:3, 0:25])
+        print (img_arr[50:55, 50:55])
+        value = img_arr[0,0]
+        print ("value = {}".format(value))
+        print ("value = {:x}".format(value))
+        print (type(value))
+
+        print ("2**32 - 1 = {:x}".format(2**32 - 1))
+        
+        if True:
+            bytes = QtCore.QByteArray()
+            buffer = QtCore.QBuffer(bytes)
+            buffer.open(QtCore.QIODevice.WriteOnly)
+            pix_map.save("test.bmp", "BMP") # writes pixmap into bytes in PNG format
+            logger.debug(buffer.size())
 
 def main():
     
@@ -213,7 +270,7 @@ def main():
     
     parser = argparse.ArgumentParser(description='Compare irradiances measured with the ESA GSTP Radiometer')
     parser.add_argument('file_names', metavar='FILE', nargs='*', help='files to compare')
-    parser.add_argument('-l', '--log-level', dest='log_level', default = 'warn', 
+    parser.add_argument('-l', '--log-level', dest='log_level', default = 'debug', 
         help    = "Log level. Only log messages with a level higher or equal than this will be printed. Default: 'warn'", 
         choices = ('debug', 'info', 'warn', 'error', 'critical'))
     
@@ -223,14 +280,15 @@ def main():
         #format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
         format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
 
-    logger.info('Started GSTP Rad comparison')
+    logger.info('Started {}'.format(PROGRAM_NAME))
     window = MainWindow(file_names = args.file_names)
     window.show()
     exit_code = app.exec_()
-    logger.info('Done GSTP Radiometer comparison')
+    logger.info('Done {}'.format(PROGRAM_NAME))
     sys.exit(exit_code)
 
 
 if __name__ == '__main__':
     main()
+    
     
