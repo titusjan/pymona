@@ -102,10 +102,31 @@ class MainWindow(QtGui.QMainWindow):
         self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
         
         self.graphics_scene = QtGui.QGraphicsScene(self)
+        
         #self.graphics_scene.setSceneRect(-20, -20, 420, 340)
-        self.graphics_scene.setSceneRect(0, 0, 300, 300)
+        
+        
+        self.graphics_scene.setSceneRect(0, 0, 300, 300) # TODO 300x200
 
         if True:        
+            # Draw black boundary around the scene rect
+            #self.graphics_scene.addRect(self.graphics_scene.sceneRect())
+            bw = 2.0 # border width
+            hbw = bw / 4.0
+            pen = QtGui.QPen()
+            pen.setWidth(bw)
+            sr = self.graphics_scene.sceneRect()
+            if False:
+                self.graphics_scene.addRect(sr.x()+hbw, sr.y()+hbw, 
+                                            sr.width()-bw, sr.height()-bw, 
+                                            pen=pen)
+            else:
+                self.graphics_scene.addRect(sr.x()-hbw, sr.y()-hbw, 
+                                            sr.width(), sr.height(), 
+                                            pen=pen)
+
+            logger.debug("self.graphics_scene.sceneRect(): {}".format(self.graphics_scene.sceneRect()))       
+        
             target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
             #self.graphics_scene.addPixmap(target_pixmap)
             
@@ -238,16 +259,39 @@ class MainWindow(QtGui.QMainWindow):
         from pprint import pprint
         logger.info('self.test()')
         
-        pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(0, 0, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
-        #pix_map.save('/Users/titusjan/Programming/genetic/pymona/test.png')
+        if False:
+            pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(0, 0, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
+            #pix_map.save('/Users/titusjan/Programming/genetic/pymona/test.png')
+            
+            rgba_image = pix_map.toImage()      # RGBA
+            logger.debug(rgba_image.format())
+            
+            #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB888)
+            rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
+            #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_Mono)
         
-        rgba_image = pix_map.toImage()      # RGBA
-        logger.debug(rgba_image.format())
         
-        #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB888)
-        rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
-        #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_Mono)
-        image = rgb_image
+        # user scene.render
+        paint_image = QtGui.QImage(300, 300, QtGui.QImage.Format.Format_RGB32)
+        logger.debug(paint_image.format())
+        logger.debug("image depth: {}".format(paint_image.depth()))
+        
+        painter = QtGui.QPainter(paint_image)
+        logger.debug(paint_image.format())
+        logger.debug("image depth: {}".format(paint_image.depth()))
+        
+        
+        self.graphics_scene.render(painter, 
+                                   source = self.graphics_scene.sceneRect(),
+                                   #target = QtCore.QRectF(50, 50, 100, 200), 
+                                   aspectRatioMode = QtCore.Qt.IgnoreAspectRatio)
+
+        
+        #return  # TODO !!!!
+        
+        
+        image = paint_image
+        #image = rgb_image
         logger.debug(image.format())
         logger.debug("image depth: {}".format(image.depth()))
         
@@ -265,11 +309,11 @@ class MainWindow(QtGui.QMainWindow):
 
 
         #return # TODO: remove
-
-        #img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
-        img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), 
-            dtype=[('r', np.uint8), ('g', np.uint8), ('b', np.uint8), ('a', np.uint8)], 
-            buffer=buffer)
+        if True:
+            #img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
+            img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), 
+                dtype=[('r', np.uint8), ('g', np.uint8), ('b', np.uint8), ('a', np.uint8)], 
+                buffer=buffer)
 
         img_rgb = np.ndarray(shape=(img_size.width(), img_size.height(), 4), dtype = np.uint8)
             
@@ -282,14 +326,16 @@ class MainWindow(QtGui.QMainWindow):
         #mpimg.imsave('image.png', img_arr, vmin=0, vmax=255)
         mpimg.imsave('image.png', img_rgb, vmin=0, vmax=255)
         
-        if True:
+        if False:
             bytes = QtCore.QByteArray()
             buffer = QtCore.QBuffer(bytes)
             buffer.open(QtCore.QIODevice.WriteOnly)
             pix_map.save("test.png", "PNG") # writes pixmap into bytes in PNG format
             logger.debug(buffer.size())
 
-
+        painter.end()
+        logger.debug("Painter is active: {}".format(painter.isActive()))
+        
         logger.info('self.test() done...')
         
 def main():
