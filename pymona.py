@@ -156,7 +156,7 @@ class MainWindow(QtGui.QMainWindow):
 
         
         brush_color = QtGui.QColor(100, 150, 200, 255)
-        pen_color =  QtGui.QColor(0, 0, 0, 255)
+        pen_color =  QtGui.QColor(200, 0, 0, 255)
         pen = QtGui.QPen(pen_color)
         pen.setWidth(0)
         #pen.setStyle(QtCore.Qt.NoPen)
@@ -259,20 +259,9 @@ class MainWindow(QtGui.QMainWindow):
         from pprint import pprint
         logger.info('self.test()')
         
-        if False:
-            pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(0, 0, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
-            #pix_map.save('/Users/titusjan/Programming/genetic/pymona/test.png')
-            
-            rgba_image = pix_map.toImage()      # RGBA
-            logger.debug(rgba_image.format())
-            
-            #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB888)
-            rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_RGB32)
-            #rgb_image = rgba_image.convertToFormat(QtGui.QImage.Format.Format_Mono)
-        
-        
         # user scene.render
-        paint_image = QtGui.QImage(300, 300, QtGui.QImage.Format.Format_RGB32)
+        paint_image = QtGui.QImage(300, 300, QtGui.QImage.Format.Format_ARGB32) # ARGB32 is slow!
+        #paint_image = QtGui.QImage(300, 300, QtGui.QImage.Format.Format_RGB32)
         logger.debug(paint_image.format())
         logger.debug("image depth: {}".format(paint_image.depth()))
         
@@ -287,11 +276,7 @@ class MainWindow(QtGui.QMainWindow):
                                    aspectRatioMode = QtCore.Qt.IgnoreAspectRatio)
 
         
-        #return  # TODO !!!!
-        
-        
         image = paint_image
-        #image = rgb_image
         logger.debug(image.format())
         logger.debug("image depth: {}".format(image.depth()))
         
@@ -312,19 +297,26 @@ class MainWindow(QtGui.QMainWindow):
         if True:
             #img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
             img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), 
-                dtype=[('r', np.uint8), ('g', np.uint8), ('b', np.uint8), ('a', np.uint8)], 
+                #dtype=[('a', np.uint8), ('r', np.uint8), ('g', np.uint8), ('b', np.uint8)],  #ARGB32
+                dtype=[('b', np.uint8), ('g', np.uint8), ('r', np.uint8), ('a', np.uint8)],   #ARGB32
                 buffer=buffer)
 
-        img_rgb = np.ndarray(shape=(img_size.width(), img_size.height(), 4), dtype = np.uint8)
+        img_rgba = np.ndarray(shape=(img_size.width(), img_size.height(), 4), dtype = np.uint8)
             
-        img_rgb[:,:,0] = img_arr[:]['r']
-        img_rgb[:,:,1] = img_arr[:]['g']
-        img_rgb[:,:,2] = img_arr[:]['b']
-        img_rgb[:,:,3] = img_arr[:]['a']
+        if True:
+            img_rgba[:,:,0] = img_arr[:]['r']
+            img_rgba[:,:,1] = img_arr[:]['g']
+            img_rgba[:,:,2] = img_arr[:]['b']
+            img_rgba[:,:,3] = img_arr[:]['a']
+        else:            
+            img_rgba[:,:,0] = img_arr[:]['b']
+            img_rgba[:,:,1] = img_arr[:]['g']
+            img_rgba[:,:,2] = img_arr[:]['r']
+            img_rgba[:,:,3] = img_arr[:]['a']
         
 
         #mpimg.imsave('image.png', img_arr, vmin=0, vmax=255)
-        mpimg.imsave('image.png', img_rgb, vmin=0, vmax=255)
+        mpimg.imsave('image.png', img_rgba, vmin=0, vmax=255)
         
         if False:
             bytes = QtCore.QByteArray()
