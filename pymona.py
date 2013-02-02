@@ -105,25 +105,43 @@ class MainWindow(QtGui.QMainWindow):
         #self.graphics_scene.setSceneRect(-20, -20, 420, 340)
         self.graphics_scene.setSceneRect(0, 0, 300, 300)
 
-        if False:        
+        if True:        
             target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
-            self.graphics_scene.addPixmap(target_pixmap)
+            #self.graphics_scene.addPixmap(target_pixmap)
             
-            color = QtGui.QColor(255, 0, 0, 75)
+            color = QtGui.QColor(255, 0, 0, 255)
             pen = QtGui.QPen(color)
             pen.setWidth(5)
             pen.setStyle(QtCore.Qt.NoPen)
-            self.graphics_scene.addEllipse(50, 60, 100, 60, 
+            self.graphics_scene.addEllipse(50, 60, 80, 60, 
                 pen = pen, 
                 brush = QtGui.QBrush(color))
+
+            color = QtGui.QColor(0, 255, 0, 255)
+            pen = QtGui.QPen(color)
+            pen.setWidth(5)
+            pen.setStyle(QtCore.Qt.NoPen)
+            self.graphics_scene.addEllipse(150, 60, 60, 80, 
+                pen = pen, 
+                brush = QtGui.QBrush(color))
+
+            color = QtGui.QColor(0, 0, 255, 255)
+            pen = QtGui.QPen(color)
+            pen.setWidth(5)
+            pen.setStyle(QtCore.Qt.NoPen)
+            self.graphics_scene.addEllipse(50, 160, 70, 70, 
+                pen = pen, 
+                brush = QtGui.QBrush(color))
+
         
-        color = QtGui.QColor(128, 64, 0, 255)
-        pen = QtGui.QPen(color)
-        pen.setWidth(5)
-        pen.setStyle(QtCore.Qt.NoPen)
-        self.graphics_scene.addRect(-1, -1, 100, 100, 
+        brush_color = QtGui.QColor(100, 150, 200, 255)
+        pen_color =  QtGui.QColor(0, 0, 0, 255)
+        pen = QtGui.QPen(pen_color)
+        pen.setWidth(0)
+        #pen.setStyle(QtCore.Qt.NoPen)
+        self.graphics_scene.addRect(0, 0, 10, 10, 
             pen = pen, 
-            brush = QtGui.QBrush(color))
+            brush = QtGui.QBrush(brush_color))
         
             
     def loadModel(self, file_name):
@@ -214,10 +232,13 @@ class MainWindow(QtGui.QMainWindow):
     def test(self):
         """ Simple function used to test stuff during run-time"""
         import numpy as np
+        import matplotlib.image as mpimg
+        import matplotlib.pyplot as plt
         import inspect
         from pprint import pprint
         logger.info('self.test()')
-        pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(1, 1, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
+        
+        pix_map = QtGui.QPixmap.grabWidget(self.graphics_view, QtCore.QRect(0, 0, 300, 300)) # make sure widht % 4 == 0 (i.e. 32 bits aligned)
         #pix_map.save('/Users/titusjan/Programming/genetic/pymona/test.png')
         
         rgba_image = pix_map.toImage()      # RGBA
@@ -230,15 +251,14 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug(image.format())
         logger.debug("image depth: {}".format(image.depth()))
         
-        img_size = image.size()
-        logger.debug(img_size)
-        logger.debug(type(img_size))
-    
+        img_size = image.size() # QSize object
+        logger.debug(img_size) 
+
         #buffer = image.bits()
         buffer = image.constBits()
         logger.debug(type(buffer))
         logger.debug(len(buffer))
-        for idx, elem in enumerate(buffer[0:100]):
+        for idx, elem in enumerate(buffer[0:32]):
             logger.debug("buffer[{0}] = {1} ({2} {2:x})".format(idx, elem, ord(elem)))
         assert img_size.width() * img_size.height() * image.depth() == len(buffer) * 8, \
             "size mismatch: {} != {}".format(img_size.width() * img_size.height() * image.depth(), len(buffer) * 8) 
@@ -246,24 +266,32 @@ class MainWindow(QtGui.QMainWindow):
 
         #return # TODO: remove
 
-        img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
-        print (img_arr.shape)
-        print (img_arr[0:3, 0:25])
-        print (img_arr[50:55, 50:55])
-        value = img_arr[0,0]
-        print ("value = {}".format(value))
-        print ("value = {:x}".format(value))
-        print (type(value))
+        #img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), dtype=np.uint32, buffer=buffer)
+        img_arr = np.ndarray(shape=(img_size.width(), img_size.height()), 
+            dtype=[('r', np.uint8), ('g', np.uint8), ('b', np.uint8), ('a', np.uint8)], 
+            buffer=buffer)
 
-        print ("2**32 - 1 = {:x}".format(2**32 - 1))
+        img_rgb = np.ndarray(shape=(img_size.width(), img_size.height(), 4), dtype = np.uint8)
+            
+        img_rgb[:,:,0] = img_arr[:]['r']
+        img_rgb[:,:,1] = img_arr[:]['g']
+        img_rgb[:,:,2] = img_arr[:]['b']
+        img_rgb[:,:,3] = img_arr[:]['a']
+        
+
+        #mpimg.imsave('image.png', img_arr, vmin=0, vmax=255)
+        mpimg.imsave('image.png', img_rgb, vmin=0, vmax=255)
         
         if True:
             bytes = QtCore.QByteArray()
             buffer = QtCore.QBuffer(bytes)
             buffer.open(QtCore.QIODevice.WriteOnly)
-            pix_map.save("test.bmp", "BMP") # writes pixmap into bytes in PNG format
+            pix_map.save("test.png", "PNG") # writes pixmap into bytes in PNG format
             logger.debug(buffer.size())
 
+
+        logger.info('self.test() done...')
+        
 def main():
     
     app = QtGui.QApplication(sys.argv)
