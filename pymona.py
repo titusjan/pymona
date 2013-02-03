@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" GSTP Radiometer Analysis Tool
+""" Monalisa genetic algorithms in Python.
 
 """
 from __future__ import print_function
@@ -334,8 +334,8 @@ def main():
     
     app = QtGui.QApplication(sys.argv)
     
-    parser = argparse.ArgumentParser(description='Compare irradiances measured with the ESA GSTP Radiometer')
-    parser.add_argument('file_names', metavar='FILE', nargs='*', help='files to compare')
+    parser = argparse.ArgumentParser(description="PyMona genetic algorithm framework")
+    #parser.add_argument('file_names', metavar='FILE', nargs='*', help='files to compare')
     parser.add_argument('-l', '--log-level', dest='log_level', default = 'debug', 
         help    = "Log level. Only log messages with a level higher or equal than this will be printed. Default: 'warn'", 
         choices = ('debug', 'info', 'warn', 'error', 'critical'))
