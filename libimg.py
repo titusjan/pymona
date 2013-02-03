@@ -14,8 +14,6 @@ import numpy as np
 import matplotlib.image as mpimg
 
 from PySide import QtCore, QtGui
-from PySide.QtCore import Qt
-
 
 # Define constants for the depth dimension when an image is converted to a Width x Height x Depth array
 # Qt uses ARGB (or BGRA in little endian) when the format is RGB32, ARGB32 or ARGB32_Premultiplied
@@ -79,6 +77,7 @@ def qt_arr_to_mpl_arr(arr_qt):
     arr_mpl[:,:,MPL_DEPTH_A] = arr_qt[:,:,QT_DEPTH_A]
     
     return arr_mpl
+    
 
 def save_qt_img_array_fo_file(file_name, arr_qt):
     """ Saves (w,h,d=4) array (with depth in Qt order) to a file
@@ -103,6 +102,20 @@ def image_array_abs_diff(arr1, arr2):
 
 def score_rgb(arr):
     return np.sum(arr[:,:,QT_SLICE_RGB])
+    
+    
+    
+def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
+    """ Renders a graphics scene to an qimage of width by height
+    """
+    if format is None:
+        format = QtGui.QImage.Format.Format_RGB32  # ARGB32 is slow!
+        
+    image = QtGui.QImage(width, height, format) 
+    painter = QtGui.QPainter(image)
+    qgraphics_scene.render(painter, aspectRatioMode = QtCore.Qt.IgnoreAspectRatio)
+    painter.end() # make sure the painter is inactive before it is destroyed
+    return image
     
     
 def test1():
