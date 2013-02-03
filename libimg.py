@@ -28,11 +28,13 @@ if QT_LITTLE_ENDIAN_MODE:
     QT_DEPTH_G = 1
     QT_DEPTH_R = 2
     QT_DEPTH_A = 3
+    QT_SLICE_RGB = slice(0, 3)
 else:
     QT_DEPTH_A = 0
     QT_DEPTH_R = 1
     QT_DEPTH_G = 2
     QT_DEPTH_B = 3
+    QT_SLICE_RGB = slice(1, 4)
     
 # MatPlotLib uses RGBA when saving an image. 
 MPL_DEPTH_R = 0
@@ -59,7 +61,6 @@ def qt_image_to_array(img):
     return np.ndarray(shape  = (img_size.width(), img_size.height(), img.depth()//8), 
                       buffer = buffer, 
                       dtype  = np.uint8)
-  
 
 
 def qt_arr_to_mpl_arr(arr_qt):
@@ -99,6 +100,10 @@ def image_array_abs_diff(arr1, arr2):
     diff[:,:,QT_DEPTH_A] = 255
     return diff
     
+
+def score_rgb(arr):
+    return np.sum(arr[:,:,QT_SLICE_RGB])
+    
     
 def test1():
 
@@ -110,16 +115,31 @@ def test1():
     
 
 def test():
-
+    
     img1 = QtGui.QImage("images/mona_lisa_300x300.jpg")
     arr1 = qt_image_to_array(img1)
+    sum1 = score_rgb(arr1)
     img2 = QtGui.QImage("images/mona_sister_300x300.jpg")
     arr2 = qt_image_to_array(img2)
-   
-    #result = image_array_average(arr1, arr2)
-    result = image_array_abs_diff(arr1, arr2) 
+    sum2 = score_rgb(arr2)   
     
-    save_qt_img_array_fo_file('mona_lisa_out.png', result)
+    max_sum = (arr1[:,:,QT_SLICE_RGB].size) * 255 # Width * Height * 3 * 255 
+    
+    print ("Sum arr1 = {}, arr2 = {}, Avg = {}".format(sum1, sum2, (sum1+sum2)/2) )
+    print ("Rel sum arr1 = {:5.3f}, arr2 = {:5.3f}, Avg = {:5.3f}"
+        .format(sum1/max_sum, sum2/max_sum, (sum1+sum2)/2/max_sum) )
+    
+    avg = image_array_average(arr1, arr2)
+    diff = image_array_abs_diff(arr1, arr2) 
+    
+    sum_avg  = score_rgb(avg)
+    sum_diff = score_rgb(diff)
+    
+    # Avg sum may not be the same because of the integer division
+    print ("Sum avg = {}, diff = {}".format(sum_avg, sum_diff))
+    print ("Rel sum avg = {:5.3f}, diff = {:5.3f}".format(sum_avg/max_sum, sum_diff/max_sum))
+    
+    save_qt_img_array_fo_file('mona_lisa_out.png', diff)
     
 
     
