@@ -61,19 +61,38 @@ class QtGsIndividual(Individual):
 
 def test():
 
+    import numpy as np
+    import numpy.random as np_rnd
     import sys
     from libimg import render_qgraphics_scene
 
     app = QtGui.QApplication(sys.argv)
+
+    width = 400
+    height = 300
     
-    genes = []
-    genes.append(QtgPolyGene.create_filled_poly(points = [(0,40), (90, -10), (300, 100), (20,5)], 
-                                                color = (255, 0, 0, 255) ))
-    genes.append(QtgPolyGene.create_filled_poly(points = [(200, 300), (140, -40), (70,45.4)], 
-                                                color = (0, 255, 255, 155)  ))
+    if False:
+        genes = []
+        genes.append(QtgPolyGene.create_filled_poly(points = [(0,40), (90, -10), (300, 100), (20,5)], 
+                                                    color = (255, 0, 0, 255) ))
+        genes.append(QtgPolyGene.create_filled_poly(points = [(200, 300), (140, -40), (70,45.4)], 
+                                                    color = (0, 255, 255, 155)  ))
     
-    width = 250
-    height = 150
+        genes.append(QtgPolyGene.create_filled_poly(points = np.array([[10, 100], [30, 131], [200, 100]]), 
+                                                    color = np.array([30, 115, 30, 255]) ))
+    else:
+        n_poly = 10
+        n_points = 4  # points per polygon
+        
+        genes = []
+        points = np_rnd.rand(n_poly, n_points, 2)
+        points[:,:,0] = 2 * width  * points[:,:,0] - 0.5 * width  # let random value vary from -0.5 to 1.5 width
+        points[:,:,1] = 2 * height * points[:,:,1] - 0.5 * height # let random value vary from -0.5 to 1.5 height
+        
+        for pts in points:
+            genes.append(QtgPolyGene.create_filled_poly(points = pts, 
+                                                        color = (0, 255, 255, 155)  ))
+
     
     individual = QtGsIndividual(genes, width, height)
     
