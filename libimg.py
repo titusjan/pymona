@@ -3,6 +3,8 @@
 
 """ Functions that work on images.
 
+    The matplotlib functionality is purely for debugging puproses.
+
 """
 from __future__ import print_function
 from __future__ import division

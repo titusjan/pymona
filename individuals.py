@@ -40,7 +40,8 @@ class QtGsIndividual(Individual):
         # Just like we need 5 poles to make a fence of 4 meters.
         scene_rect = QtCore.QRectF(0, 0, self._img_width + 1, self._img_height + 1)
         self._graphics_scene = QtGui.QGraphicsScene(scene_rect)
-        self._graphics_scene.setBackgroundBrush(Qt.white)
+        #self._graphics_scene.setBackgroundBrush(Qt.ligthGray)
+        self._graphics_scene.setBackgroundBrush(QtGui.QColor(127, 127, 127))
         
         self._chromosomes = chromosomes
         self._add_chromosomes_to_scene()

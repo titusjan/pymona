@@ -110,22 +110,22 @@ if __name__ == '__main__':
         x, w = 0, img_width
         y, h = 0, img_height 
 
-        n_poly = 1
         chromos = []
-        #chromos.append( QtGsPolyChromosome.create_random(n_poly, 100, x, y, w, h, color = (150, 125, 100, 255) ) )
-        #chromos.append( QtGsPolyChromosome.create_random(n_poly, 4, x, y, w, h, color = (0, 0, 0, 255) ) )
-        
-        margin = 80
-        xmin = x+margin
-        ymin = y+margin
-        xmax = x+w-margin
-        ymax = y+h-margin
-        rect = np.array([ [ [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin] ] ])
-        chromos.append( QtGsPolyChromosome(poly_genes = rect,  
-                                           #color_genes = np.array([[255, 0, 0, 255]], dtype=np.uint8), 
-                                           #color_genes = np.array([[0, 255, 0, 255]], dtype=np.uint8), 
-                                           color_genes = np.array([[0, 0, 255, 255]], dtype=np.uint8), 
-                                           z_genes = np.array([1])) )
+        if True:
+            n_poly = 40
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h ) )
+        else:            
+            margin = 80
+            xmin = x+margin
+            ymin = y+margin
+            xmax = x+w-margin
+            ymax = y+h-margin
+            rect = np.array([ [ [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin] ] ])
+            chromos.append( QtGsPolyChromosome(poly_genes = rect,  
+                                               #color_genes = np.array([[255, 0, 0, 255]], dtype=np.uint8), 
+                                               #color_genes = np.array([[0, 255, 0, 255]], dtype=np.uint8), 
+                                               color_genes = np.array([[0, 0, 255, 255]], dtype=np.uint8), 
+                                               z_genes = np.array([1])) )
         
         individual = QtGsIndividual( chromos, img_width, img_height)
         
