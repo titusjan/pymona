@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 from PySide import QtCore, QtGui
 from PySide.QtCore import Qt
 
-from genes import QtgPolyGene
+from chromosomes import QtGsPolyChromosome
 
 
 class Individual(object):  # Abstract base class
@@ -22,12 +22,13 @@ class Individual(object):  # Abstract base class
 
 class QtGsIndividual(Individual):
 
-    def __init__(self, qt_gi_genes, img_width, img_height):
+    def __init__(self, chromosomes, img_width, img_height):
         """ Qt grapics scene individual.
         
             An individual that can make a QGraphicsScene of itself.
             The genes should be a list of QGraphicsItems
             
+            chromosomes must be a list of Chromosome objects
             img_width and img_heights is the size of the target image in pixels
         """
         self._img_width = int(img_width)
@@ -40,8 +41,8 @@ class QtGsIndividual(Individual):
         self._graphics_scene = QtGui.QGraphicsScene(scene_rect)
         self._graphics_scene.setBackgroundBrush(Qt.gray)
         
-        self._genes = qt_gi_genes
-        self._add_genes_to_scene(self._genes)
+        self._chromosomes = chromosomes
+        self._add_chromosomes_to_scene()
         
         
     @property
@@ -52,64 +53,58 @@ class QtGsIndividual(Individual):
     def graphics_scene(self):
         return self._graphics_scene
         
-    def _add_genes_to_scene(self, genes):
-        for gene in genes:
-            self.graphics_scene.addItem(gene)
+    def _add_chromosomes_to_scene(self):
+        for chromosome in self._chromosomes:
+            for qitem in chromosome.get_graphic_items():
+                self.graphics_scene.addItem(qitem)
             
 
 
-
-def test():
-
-    import numpy as np
-    import numpy.random as np_rnd
-    import sys
-    from libimg import render_qgraphics_scene
-
-    app = QtGui.QApplication(sys.argv)
-
-    width = 400
-    height = 300
+#############
+## Testing ##
+############# 
     
-    if False:
-        genes = []
-        genes.append(QtgPolyGene.create_filled_poly(points = [(0,40), (90, -10), (300, 100), (20,5)], 
-                                                    color = (255, 0, 0, 255) ))
-        genes.append(QtgPolyGene.create_filled_poly(points = [(200, 300), (140, -40), (70,45.4)], 
-                                                    color = (0, 255, 255, 155)  ))
+if __name__ == '__main__':
+
+    def test():
     
-        genes.append(QtgPolyGene.create_filled_poly(points = np.array([[10, 100], [30, 131], [200, 100]]), 
-                                                    color = np.array([30, 115, 30, 255]) ))
-    else:
-        n_poly = 10
-        n_points = 4  # points per polygon
+        import sys
+        from libimg import render_qgraphics_scene
+    
+        app = QtGui.QApplication(sys.argv)
+    
+        img_width = 400
+        img_height = 300
         
-        genes = []
-        points = np_rnd.rand(n_poly, n_points, 2)
-        points[:,:,0] = 2 * width  * points[:,:,0] - 0.5 * width  # let random value vary from -0.5 to 1.5 width
-        points[:,:,1] = 2 * height * points[:,:,1] - 0.5 * height # let random value vary from -0.5 to 1.5 height
-        
-        for pts in points:
-            genes.append(QtgPolyGene.create_filled_poly(points = pts, 
-                                                        color = (0, 255, 255, 155)  ))
+        # Let the x value vary from -0.5 to 1.5 width
+        # Let the y value vary from -0.5 to 1.5 height
+        x = -0.5 * img_width 
+        y = -0.5 * img_height 
+        w = 2 * img_width
+        h = 2 * img_height
 
-    
-    individual = QtGsIndividual(genes, width, height)
-    
-    img = render_qgraphics_scene(individual.graphics_scene, width, height)
-    img.save("individual.png")
-    
-    
-def main():
-
-    logging.basicConfig(level = 'DEBUG', 
-        #format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
-        format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
+        if True:
+            chromo3 = QtGsPolyChromosome.create_random(20, 4, x, y, w, h) 
+            chromo4 = QtGsPolyChromosome.create_random(20, 4, x, y, w, h) 
+            individual = QtGsIndividual( [chromo3, chromo4], img_width, img_height)
+        else:
+            chrrr = QtGsPolyChromosome.create_random(4, 150, x, y, w, h) 
+            individual = QtGsIndividual( [chrrr], img_width, img_height)
         
-    logger.info('Started...')
-    test()
-    logger.info('Done...')
+        img = render_qgraphics_scene(individual.graphics_scene, img_width, img_height)
+        img.save("individual.png")
+        
+        
+    def main():
     
+        logging.basicConfig(level = 'DEBUG', 
+            #format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
+            format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
+            
+        logger.info('Started...')
+        test()
+        logger.info('Done...')
+        
 
 if __name__ == '__main__':
     main()

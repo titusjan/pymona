@@ -92,6 +92,7 @@ def image_array_average(arr1, arr2):
     # First devide by two to prevent overflow
     return arr1 // 2 + arr2 // 2
 
+
 def image_array_abs_diff(arr1, arr2):
     """ Returns abs(arr1-arr2) for unsigned integers
     """
@@ -102,7 +103,6 @@ def image_array_abs_diff(arr1, arr2):
 
 def score_rgb(arr):
     return np.sum(arr[:,:,QT_SLICE_RGB])
-    
     
     
 def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
@@ -118,55 +118,61 @@ def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
     return image
     
     
-def test1():
 
-    #img = QtGui.QImage("images/mona_lisa_300x300.jpg")
-    img = QtGui.QImage("images/mona_sister_300x300.jpg")
-    
-    arr = qt_image_to_array(img)
-    save_qt_img_array_fo_file('mona_lisa_out.png', arr)
+#############
+## Testing ##
+############# 
     
 
-def test():
-    
-    img1 = QtGui.QImage("images/mona_lisa_300x300.jpg")
-    arr1 = qt_image_to_array(img1)
-    sum1 = score_rgb(arr1)
-    img2 = QtGui.QImage("images/mona_sister_300x300.jpg")
-    arr2 = qt_image_to_array(img2)
-    sum2 = score_rgb(arr2)   
-    
-    max_sum = (arr1[:,:,QT_SLICE_RGB].size) * 255 # Width * Height * 3 * 255 
-    
-    print ("Sum arr1 = {}, arr2 = {}, Avg = {}".format(sum1, sum2, (sum1+sum2)/2) )
-    print ("Rel sum arr1 = {:5.3f}, arr2 = {:5.3f}, Avg = {:5.3f}"
-        .format(sum1/max_sum, sum2/max_sum, (sum1+sum2)/2/max_sum) )
-    
-    avg = image_array_average(arr1, arr2)
-    diff = image_array_abs_diff(arr1, arr2) 
-    
-    sum_avg  = score_rgb(avg)
-    sum_diff = score_rgb(diff)
-    
-    # Avg sum may not be the same because of the integer division
-    print ("Sum avg = {}, diff = {}".format(sum_avg, sum_diff))
-    print ("Rel sum avg = {:5.3f}, diff = {:5.3f}".format(sum_avg/max_sum, sum_diff/max_sum))
-    
-    save_qt_img_array_fo_file('mona_lisa_out.png', diff)
-    
+if __name__ == '__main__':
 
+    def test1():
     
- 
-def main():
-
-    logging.basicConfig(level = 'DEBUG', 
-        #format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
-        format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
+        #img = QtGui.QImage("images/mona_lisa_300x300.jpg")
+        img = QtGui.QImage("images/mona_sister_300x300.jpg")
         
-    logger.info('Started {}'.format(__name__))
-    test()
-    logger.info('Done {}'.format(__name__))
+        arr = qt_image_to_array(img)
+        save_qt_img_array_fo_file('mona_lisa_out.png', arr)
+        
     
+    def test():
+        
+        img1 = QtGui.QImage("images/mona_lisa_300x300.jpg")
+        arr1 = qt_image_to_array(img1)
+        sum1 = score_rgb(arr1)
+        img2 = QtGui.QImage("images/mona_sister_300x300.jpg")
+        arr2 = qt_image_to_array(img2)
+        sum2 = score_rgb(arr2)   
+        
+        max_sum = (arr1[:,:,QT_SLICE_RGB].size) * 255 # Width * Height * 3 * 255 
+        
+        print ("Sum arr1 = {}, arr2 = {}, Avg = {}".format(sum1, sum2, (sum1+sum2)/2) )
+        print ("Rel sum arr1 = {:5.3f}, arr2 = {:5.3f}, Avg = {:5.3f}"
+            .format(sum1/max_sum, sum2/max_sum, (sum1+sum2)/2/max_sum) )
+        
+        avg = image_array_average(arr1, arr2)
+        diff = image_array_abs_diff(arr1, arr2) 
+        
+        sum_avg  = score_rgb(avg)
+        sum_diff = score_rgb(diff)
+        
+        # Avg sum may not be the same because of the integer division
+        print ("Sum avg = {}, diff = {}".format(sum_avg, sum_diff))
+        print ("Rel sum avg = {:5.3f}, diff = {:5.3f}".format(sum_avg/max_sum, sum_diff/max_sum))
+        
+        save_qt_img_array_fo_file('mona_lisa_out.png', diff)
+
+
+    def main():
+    
+        logging.basicConfig(level = 'DEBUG', 
+            #format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
+            format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
+            
+        logger.info('Started {}'.format(__name__))
+        test()
+        logger.info('Done {}'.format(__name__))
+
 
 if __name__ == '__main__':
     main()
