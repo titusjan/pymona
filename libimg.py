@@ -44,9 +44,9 @@ MPL_DEPTH_A = 3
 def qt_image_to_array(img):
     """ Creates a numpy array from a QImage.
     """
+    assert type(img) == QtGui.QImage, "img must be a QtGui.QImage object" 
     img_size = img.size()
     buffer = img.constBits()
-    #buffer = image.bits()
         
     # Sanity check
     n_bits_buffer = len(buffer) * 8
@@ -59,6 +59,26 @@ def qt_image_to_array(img):
     return np.ndarray(shape  = (img_size.width(), img_size.height(), img.depth()//8), 
                       buffer = buffer, 
                       dtype  = np.uint8)
+
+
+
+def array_to_qt_image(arr, format = None):
+    """ Creates QImage from a numpy array.
+    
+        If format is not set it will default to QtGui.QImage.Format.Format_RGB32
+    """
+    assert type(arr) == np.ndarray, "arr must be a numpy array"
+    if format == None:
+        format = QtGui.QImage.Format.Format_RGB32
+        
+    assert arr.dtype == np.uint8, "Array must be of type np.uint8"
+    assert arr.ndim == 3, "Array must be width x height x 4 array"
+    arr_width, arr_height, arr_depth = arr.shape
+    assert arr_depth == 4, "Array depth must be 4. Got: {}".format(arr_depth)
+    buffer = arr.data
+        
+    qimg = QtGui.QImage(buffer, arr_width, arr_height, format)
+    return qimg
 
 
 def qt_arr_to_mpl_arr(arr_qt):
@@ -161,6 +181,10 @@ if __name__ == '__main__':
         print ("Rel sum avg = {:5.3f}, diff = {:5.3f}".format(sum_avg/max_sum, sum_diff/max_sum))
         
         save_qt_img_array_fo_file('mona_lisa_out.png', diff)
+        
+        qimg_diff = array_to_qt_image(diff)
+        qimg_diff.save('mona_lisa_qt_out.png')
+        
 
 
     def main():

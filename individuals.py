@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from PySide import QtCore, QtGui
 from PySide.QtCore import Qt
 
+from libimg import render_qgraphics_scene
 from chromosomes import QtGsPolyChromosome
 
 
@@ -39,15 +40,15 @@ class QtGsIndividual(Individual):
         # Just like we need 5 poles to make a fence of 4 meters.
         scene_rect = QtCore.QRectF(0, 0, self._img_width + 1, self._img_height + 1)
         self._graphics_scene = QtGui.QGraphicsScene(scene_rect)
-        self._graphics_scene.setBackgroundBrush(Qt.gray)
+        self._graphics_scene.setBackgroundBrush(Qt.white)
         
         self._chromosomes = chromosomes
         self._add_chromosomes_to_scene()
         
-        
+
     @property
-    def genes(self):
-        return self._genes        
+    def image(self):
+        return render_qgraphics_scene(self.graphics_scene, self._img_width, self._img_height)
         
     @property
     def graphics_scene(self):
@@ -66,12 +67,10 @@ class QtGsIndividual(Individual):
     
 if __name__ == '__main__':
 
+    import sys
+    from libimg import render_qgraphics_scene
+
     def test():
-    
-        import sys
-        from libimg import render_qgraphics_scene
-    
-        app = QtGui.QApplication(sys.argv)
     
         img_width = 400
         img_height = 300
@@ -85,18 +84,28 @@ if __name__ == '__main__':
             x, w = -0.5 * img_width,  2 * img_width
             y, h = -0.5 * img_height, 2 * img_height 
 
-        if True:
+        alt = 1
+        chromos = []
+        if alt == 0:
+            n_poly = 200
+            alpha = 15
             chromos = []
-            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (255, 0, 0, 10)) )
-            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (0, 255, 0, 10)) )
-            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (0, 0, 255, 10)) )
-            individual = QtGsIndividual( chromos, img_width, img_height)
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (255, 0, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 255, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 0, 255, alpha)) )
+        if alt == 1:
+            n_poly = 2
+            alpha = 255
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (255, 0, 0, alpha)) )
+        elif alt == 2:
+            chromos.append( QtGsPolyChromosome.create_random(4, 150, x, y, w, h) )
         else:
-            chrrr = QtGsPolyChromosome.create_random(4, 150, x, y, w, h) 
+            assert False, "invalid alternative"
         
         individual = QtGsIndividual( chromos, img_width, img_height)
         
-        img = render_qgraphics_scene(individual.graphics_scene, img_width, img_height)
+        img = individual.image
+        logger.info('saving: individual.png')
         img.save("individual.png")
         
         
@@ -107,6 +116,7 @@ if __name__ == '__main__':
             format='%(asctime)s: %(filename)20s:%(lineno)-4d : %(levelname)-6s: %(message)s')
             
         logger.info('Started...')
+        app = QtGui.QApplication(sys.argv)
         test()
         logger.info('Done...')
         
