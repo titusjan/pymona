@@ -56,7 +56,7 @@ class QtGsIndividual(Individual):
     def _add_chromosomes_to_scene(self):
         for chromosome in self._chromosomes:
             for qitem in chromosome.get_graphic_items():
-                self.graphics_scene.addItem(qitem)
+                self._graphics_scene.addItem(qitem)
             
 
 
@@ -87,9 +87,9 @@ if __name__ == '__main__':
 
         if True:
             chromos = []
-            chromos.append( QtGsPolyChromosome.create_random(2, 3, x, y, w, h, color = (255, 0, 0, 100)) )
-            chromos.append( QtGsPolyChromosome.create_random(2, 4, x, y, w, h, color = (0, 255, 0, 100)) )
-            chromos.append( QtGsPolyChromosome.create_random(2, 5, x, y, w, h, color = (0, 0, 255, 100)) )
+            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (255, 0, 0, 10)) )
+            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (0, 255, 0, 10)) )
+            chromos.append( QtGsPolyChromosome.create_random(200, 3, x, y, w, h, color = (0, 0, 255, 10)) )
             individual = QtGsIndividual( chromos, img_width, img_height)
         else:
             chrrr = QtGsPolyChromosome.create_random(4, 150, x, y, w, h) 

@@ -36,25 +36,35 @@ class QtGsChromosome(Chromosome):
     
 class QtGsPolyChromosome(Chromosome):
 
-    def __init__(self, poly_genes, color_genes):
-        """ Class where each gene can be representated as a QtGui.QGraphicsPolyItem
+    def __init__(self, poly_genes, color_genes, z_genes):
+        """ Class where each gene can be representated as a polygon (QGraphicsPolyItem).
         
-            All genes are the same size and their poly has the same number of vertices.
+            Each polygon has a color and a z-value (depth).
+            All polygons have the same number of vertices. 
             
-            poly_genes must be a 3D float array with dimensions: n_genes, n_vertices, 2
-            color genes must be a 2D uint8 array with dimensions: n_genes, 4
-            
-            
+            poly_genes must be a 3D float array with shape  (n_poly, n_vertices, 2)
+            color genes must be a 2D uint8 array with shape (n_poly, 4) or (1,4)
+                in the latter case all polygon will share this color
+            z_genes must be a 1D array with length n_poly or length 1
+                in the latter case all polygons will have the same z-value
         """
         self._poly_genes = poly_genes
         self._color_genes = color_genes
+        self._z_genes = z_genes
+        
+        assert color_genes.dtype == np.uint8, "Color genes must be of type np.uint8"
         
         assert poly_genes.ndim == 3, "poly_genes must be 3D np.array (n_genes, n_vertices, 2)"
         assert poly_genes.shape[2] == 2, "poly_genes 3rd dimension must have size 2 (x&y coordinatess)."
 
         self._n_colors = color_genes.shape[0]
         assert color_genes.shape == (1,4) or color_genes.shape == (self.n_polygons,4), \
-            "color_genes shape must be (1,4) or (n_vertices,4)"
+            "color_genes shape must be (1,4) or (n_polygons,4)"
+
+        self._n_z_values = z_genes.shape[0]
+        assert z_genes.shape == (1,) or z_genes.shape == (self.n_polygons,), \
+            "color_genes length must be 1 or n_polygons"
+        
         
     @property
     def n_polygons(self):
@@ -78,6 +88,11 @@ class QtGsPolyChromosome(Chromosome):
             else:
                 color_gene = self._color_genes[idx]
                 
+            if self._n_z_values == 1:
+                z_gene = self._z_genes[0]
+            else:
+                z_gene = self._z_genes[idx]
+                
             qpoints = [QtCore.QPointF(row[0], row[1]) for row in poly_gene]
             qpoly = QtGui.QPolygonF(qpoints)
             qitem = QtGui.QGraphicsPolygonItem(qpoly)
@@ -86,6 +101,8 @@ class QtGsPolyChromosome(Chromosome):
             qitem.setBrush(QtGui.QBrush(qcolor))
             qitem.setPen(NO_PEN)
             
+            qitem.setZValue(z_gene)
+            
             qitems.append(qitem)
             
         return qitems
@@ -93,7 +110,8 @@ class QtGsPolyChromosome(Chromosome):
     
     @staticmethod
     def create_random(n_polygons, n_vertices, x, y, width, height, 
-                      color = None):
+                      color = None, 
+                      z     = None):
         """ Creates random QtGsPolyChromosome.
         
             Will create n_polygons polygons each having n_vertices vertices 
@@ -102,6 +120,9 @@ class QtGsPolyChromosome(Chromosome):
             If color is None it will be set randomly, otherwise it must be 
             a 1 by 4 array or (r,g,b,a) tuple and all polygons will have that 
             color.
+            
+            If z is None it will be set randomly between 0 and 1, otherwise it 
+            must be a float and all polygons will have that z value (depth).
         """
         
         poly_genes = np_rnd.rand(n_polygons, n_vertices, 2)
@@ -115,5 +136,10 @@ class QtGsPolyChromosome(Chromosome):
         else:
             color_genes = np.array(color).reshape(1,4).astype(np.uint8)
             
-        return QtGsPolyChromosome(poly_genes, color_genes)
+        if z == None:
+            z_genes = np_rnd.rand(n_polygons) 
+        else:
+            z_genes = np.array(z).reshape(1)
+            
+        return QtGsPolyChromosome(poly_genes, color_genes, z_genes)
     
