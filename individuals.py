@@ -76,20 +76,25 @@ if __name__ == '__main__':
         img_width = 400
         img_height = 300
         
-        # Let the x value vary from -0.5 to 1.5 width
-        # Let the y value vary from -0.5 to 1.5 height
-        x = -0.5 * img_width 
-        y = -0.5 * img_height 
-        w = 2 * img_width
-        h = 2 * img_height
+        if True:
+            x, w = 0, img_width
+            y, h = 0, img_height 
+        else:
+            # Let the x value vary from -0.5 to 1.5 width
+            # Let the y value vary from -0.5 to 1.5 height
+            x, w = -0.5 * img_width,  2 * img_width
+            y, h = -0.5 * img_height, 2 * img_height 
 
         if True:
-            chromo3 = QtGsPolyChromosome.create_random(20, 4, x, y, w, h) 
-            chromo4 = QtGsPolyChromosome.create_random(20, 4, x, y, w, h) 
-            individual = QtGsIndividual( [chromo3, chromo4], img_width, img_height)
+            chromos = []
+            chromos.append( QtGsPolyChromosome.create_random(2, 3, x, y, w, h, color = (255, 0, 0, 100)) )
+            chromos.append( QtGsPolyChromosome.create_random(2, 4, x, y, w, h, color = (0, 255, 0, 100)) )
+            chromos.append( QtGsPolyChromosome.create_random(2, 5, x, y, w, h, color = (0, 0, 255, 100)) )
+            individual = QtGsIndividual( chromos, img_width, img_height)
         else:
             chrrr = QtGsPolyChromosome.create_random(4, 150, x, y, w, h) 
-            individual = QtGsIndividual( [chrrr], img_width, img_height)
+        
+        individual = QtGsIndividual( chromos, img_width, img_height)
         
         img = render_qgraphics_scene(individual.graphics_scene, img_width, img_height)
         img.save("individual.png")

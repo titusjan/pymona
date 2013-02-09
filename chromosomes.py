@@ -44,45 +44,76 @@ class QtGsPolyChromosome(Chromosome):
             poly_genes must be a 3D float array with dimensions: n_genes, n_vertices, 2
             color genes must be a 2D uint8 array with dimensions: n_genes, 4
             
+            
         """
-        assert poly_genes.ndim == 3, "poly_genes must be 3D np.array (n_genes, n_vertices, 2)"
-        n_poly_genes, n_vertices, n_xy = poly_genes.shape
-        assert n_xy == 2, "poly_genes 3rd dimension must have size 2 (x&y coordinatess)."
-
-        assert color_genes.ndim == 2, "Genes must be 3D np.array (n_genes, rgba)"
-        n_color_genes, n_rgba = color_genes.shape
-        assert n_color_genes == n_poly_genes, \
-            "First dimension of poly_genes and color_genes must have the same length"
-        assert n_rgba == 4, "color_genes 2nd dimension must have size 4 (rgba)."
-        
         self._poly_genes = poly_genes
         self._color_genes = color_genes
+        
+        assert poly_genes.ndim == 3, "poly_genes must be 3D np.array (n_genes, n_vertices, 2)"
+        assert poly_genes.shape[2] == 2, "poly_genes 3rd dimension must have size 2 (x&y coordinatess)."
+
+        self._n_colors = color_genes.shape[0]
+        assert color_genes.shape == (1,4) or color_genes.shape == (self.n_polygons,4), \
+            "color_genes shape must be (1,4) or (n_vertices,4)"
+        
+    @property
+    def n_polygons(self):
+        "Returns the number polygons in the chromosome"
+        return self._poly_genes.shape[0]
+        
+    @property
+    def n_vertices(self):
+        "Returns the number of vertices per polygon"
+        return self._poly_genes.shape[0]
         
     
     def get_graphic_items(self):
         """ Returns a list with the QGraphicItem representation of each gene
         """
         qitems = []
-        for poly_gene, color_gene in zip(self._poly_genes, self._color_genes):
+        for idx, poly_gene in enumerate(self._poly_genes):
+
+            if self._n_colors == 1:
+                color_gene = self._color_genes[0]
+            else:
+                color_gene = self._color_genes[idx]
+                
             qpoints = [QtCore.QPointF(row[0], row[1]) for row in poly_gene]
-            qcolor = QtGui.QColor(*color_gene) # unpack tuple 
             qpoly = QtGui.QPolygonF(qpoints)
             qitem = QtGui.QGraphicsPolygonItem(qpoly)
-            qitem.setPen(NO_PEN)
+            
+            qcolor = QtGui.QColor(*color_gene) # unpack tuple 
             qitem.setBrush(QtGui.QBrush(qcolor))
+            qitem.setPen(NO_PEN)
+            
             qitems.append(qitem)
+            
         return qitems
         
     
     @staticmethod
-    def create_random(n_genes, n_vertices, x, y, width, height):
-        """ Creates random QtGsPolyChromosome"""
+    def create_random(n_polygons, n_vertices, x, y, width, height, 
+                      color = None):
+        """ Creates random QtGsPolyChromosome.
         
-        poly_genes = np_rnd.rand(n_genes, n_vertices, 2)
-        poly_genes[:,:,0] = width  * poly_genes[:,:,0] + x
-        poly_genes[:,:,1] = height * poly_genes[:,:,1] + y
+            Will create n_polygons polygons each having n_vertices vertices 
+            The vertices vary from (x, y) to (x+width, y+with)
+            
+            If color is None it will be set randomly, otherwise it must be 
+            a 1 by 4 array or (r,g,b,a) tuple and all polygons will have that 
+            color.
+        """
         
-        color_genes = np_rnd.random_integers(0, 255, size = (n_genes, 4)).astype(np.uint8)
-
+        poly_genes = np_rnd.rand(n_polygons, n_vertices, 2)
+        poly_genes[:,:,0] *= width  
+        poly_genes[:,:,0] += x
+        poly_genes[:,:,1] *= height 
+        poly_genes[:,:,1] += y
+        
+        if color == None:
+            color_genes = np_rnd.random_integers(0, 255, size = (n_polygons,4)).astype(np.uint8)
+        else:
+            color_genes = np.array(color).reshape(1,4).astype(np.uint8)
+            
         return QtGsPolyChromosome(poly_genes, color_genes)
     
