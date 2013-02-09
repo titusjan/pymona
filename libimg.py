@@ -170,7 +170,12 @@ image_array_abs_diff = image_array_abs_diff_8bit
     
 
 def score_rgb(arr):
+    " The total pixel value in the RGB channels"
     return np.sum(arr[:,:,QT_SLICE_RGB])
+    
+def max_score_rgb(arr):
+    " The maximum possible total pixel value in the RGB channels (= width * height * 3 * 255)"
+    return arr[:,:,QT_SLICE_RGB].size * 255
     
     
 def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
@@ -186,6 +191,16 @@ def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
     return image
     
     
+def get_image_rectangle(image, margin_relative = 0.0):
+    """ Gets the image rectangle as a (x, y, width, height) tuple.
+        
+        Adds a relative margin to the rectangle
+    """
+    x_margin = margin_relative * image.width()
+    y_margin = margin_relative * image.height()
+
+    return (-x_margin, -y_margin, 
+            image.width() + 2*x_margin, image.height() + 2*y_margin)
 
 #############
 ## Testing ##

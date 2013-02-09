@@ -45,6 +45,11 @@ class QtGsIndividual(Individual):
         
         self._chromosomes = chromosomes
         self._add_chromosomes_to_scene()
+
+        
+    def clone(self):
+        new_chromosomes = [chr.clone() for chr in self._chromosomes]
+        return QtGsIndividual(new_chromosomes, self._img_width, self._img_height)
         
 
     @property
@@ -59,6 +64,7 @@ class QtGsIndividual(Individual):
         for chromosome in self._chromosomes:
             for qitem in chromosome.get_graphic_items():
                 self._graphics_scene.addItem(qitem)
+            
             
 
 
@@ -79,27 +85,31 @@ if __name__ == '__main__':
         if True:
             x, w = 0, img_width
             y, h = 0, img_height 
+            rect = (x, y, w, h)
+            
         else:
             # Let the x value vary from -0.5 to 1.5 width
             # Let the y value vary from -0.5 to 1.5 height
             x, w = -0.5 * img_width,  2 * img_width
             y, h = -0.5 * img_height, 2 * img_height 
-
+            rect = (x, y, w, h)
+        
         alt = 1
         chromos = []
+        
         if alt == 0:
             n_poly = 200
             alpha = 15
             chromos = []
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (255, 0, 0, alpha)) )
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 255, 0, alpha)) )
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 0, 255, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect, color = (255, 0, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect, color = (0, 255, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect, color = (0, 0, 255, alpha)) )
         if alt == 1:
             n_poly = 2
             alpha = 255
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 0, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect, color = (0, 0, 0, alpha)) )
         elif alt == 2:
-            chromos.append( QtGsPolyChromosome.create_random(4, 150, x, y, w, h) )
+            chromos.append( QtGsPolyChromosome.create_random(4, 150, rect) )
         else:
             assert False, "invalid alternative"
         

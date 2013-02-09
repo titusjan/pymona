@@ -74,7 +74,12 @@ class QtGsPolyChromosome(Chromosome):
     @property
     def n_vertices(self):
         "Returns the number of vertices per polygon"
-        return self._poly_genes.shape[0]
+        return self._poly_genes.shape[1]
+        
+    @property
+    def n_colors(self):
+        "Returns the number colors in the gene"
+        return self._n_colors
         
     
     def get_graphic_items(self):
@@ -106,14 +111,34 @@ class QtGsPolyChromosome(Chromosome):
             qitems.append(qitem)
             
         return qitems
+
+        
+    def clone(self):
+    
+        noise_poly  = 1.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
+        noise_color = 1.0   * np_rnd.randn(self.n_polygons, 4)
+        noise_z     = 0.0001 * np_rnd.randn(self.n_polygons)
+    
+        new_poly_genes  = self._poly_genes  + noise_poly
+        new_color_genes = self._color_genes + noise_color
+        new_z_genes     = self._z_genes     + noise_z
+
+        
+        np.clip(new_color_genes, 0, 255, out = new_color_genes)
+        np.clip(new_z_genes, 0.0, 1.0, out = new_z_genes)
+
+
+        return QtGsPolyChromosome(new_poly_genes, new_color_genes.astype(np.uint8), new_z_genes)
         
     
     @staticmethod
-    def create_random(n_polygons, n_vertices, x, y, width, height, 
+    def create_random(n_polygons, n_vertices, rectangle, 
                       color = None, 
                       z     = None):
         """ Creates random QtGsPolyChromosome.
         
+            rectangle should be a (x, y, width, height) tuple.
+            
             Will create n_polygons polygons each having n_vertices vertices 
             The vertices vary from (x, y) to (x+width, y+with)
             
@@ -124,6 +149,8 @@ class QtGsPolyChromosome(Chromosome):
             If z is None it will be set randomly between 0 and 1, otherwise it 
             must be a float and all polygons will have that z value (depth).
         """
+        
+        x, y, width, height = rectangle
         
         poly_genes = np_rnd.rand(n_polygons, n_vertices, 2)
         poly_genes[:,:,0] *= width  
@@ -143,3 +170,4 @@ class QtGsPolyChromosome(Chromosome):
             
         return QtGsPolyChromosome(poly_genes, color_genes, z_genes)
     
+

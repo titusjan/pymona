@@ -14,7 +14,8 @@ import sys
 
 from PySide import QtCore, QtGui
 
-from libimg import (qt_image_to_array, array_to_qt_image, image_array_abs_diff)
+from libimg import (qt_image_to_array, array_to_qt_image, 
+                    image_array_abs_diff, score_rgb, max_score_rgb)
 from chromosomes import QtGsPolyChromosome
 from individuals import QtGsIndividual
 
@@ -33,12 +34,12 @@ class QtImgEnvironment(Environment):
         self._target_image   = target_image
         self._target_arr     = None  # cache array of target image
         self._individual     = None
-        self._individual_arr = None  # cache array of image of indivual 
-        self._fitness_arr    = None  # cache of fitness array
+        self._clear_cache()
         
     def _clear_cache(self):
-        self._individual_arr = None
-        self._fitness_arr = None
+        self._individual_arr = None  # cache array of image of indivual 
+        self._fitness_arr    = None  # cache of fitness array
+        self._max_score_rgb  = None
         logger.debug("cache cleared")
 
     @property
@@ -60,7 +61,8 @@ class QtImgEnvironment(Environment):
     def individual_arr(self):
         assert self.individual != None, "Individual not set"
         if self._individual_arr == None:
-            self._individual_arr = qt_image_to_array(self.individual.image) 
+            self._individual_arr = qt_image_to_array(self.individual.image)
+            self._max_score_rgb = max_score_rgb(self._individual_arr)
         return self._individual_arr  
 
     @property
@@ -86,8 +88,11 @@ class QtImgEnvironment(Environment):
         
     @property
     def fitness_score(self):
-        " Returns the fitness score of the individual in the environment"
-        return score_rgb(self.fitness_arr)
+        """ Returns the fitness score of the individual in the environment
+        
+            The score is normalized between 0 and 1. Lower is better.
+        """
+        return (score_rgb(self.fitness_arr) / self._max_score_rgb)
         
 
 #############
@@ -99,21 +104,27 @@ if __name__ == '__main__':
     import sys
     import numpy as np
     
+    from libimg import get_image_rectangle
+    
     def test():
         
         target_image = QtGui.QImage(sys.argv[1])
         environment = QtImgEnvironment(target_image)
-   
-        img_width = target_image.width()
-        img_height = target_image.height()
         
-        x, w = 0, img_width
-        y, h = 0, img_height 
+        rect = get_image_rectangle(target_image, margin_relative = 0.25)
+        
+        print ("Image rectangle: {}".format(rect))
+   
+#         img_width = target_image.width()
+#         img_height = target_image.height()
+#         
+#         x, w = 0, img_width
+#         y, h = 0, img_height 
 
         chromos = []
         if True:
             n_poly = 40
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h ) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect ) )
         else:            
             margin = 80
             xmin = x+margin
@@ -127,7 +138,7 @@ if __name__ == '__main__':
                                                color_genes = np.array([[0, 0, 255, 255]], dtype=np.uint8), 
                                                z_genes = np.array([1])) )
         
-        individual = QtGsIndividual( chromos, img_width, img_height)
+        individual = QtGsIndividual( chromos, target_image.width(), target_image.height())
         
         environment.individual = individual
         file_name = 'environment.target.png'
