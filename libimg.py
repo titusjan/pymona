@@ -7,6 +7,7 @@
 from __future__ import print_function
 from __future__ import division
 
+import copy
 import logging
 logger = logging.getLogger(__name__)
 
@@ -41,10 +42,17 @@ MPL_DEPTH_B = 2
 MPL_DEPTH_A = 3
 
 
-def qt_image_to_array(img):
+def qt_image_to_array(img, share_memory=False):
     """ Creates a numpy array from a QImage.
+    
+        If share_memory is True, the numpy array and the QImage is shared.
+        Be carefull: make sure the numpy array is destroyed before the image, 
+        otherwise the array will point to unallocated memory!!
     """
     assert type(img) == QtGui.QImage, "img must be a QtGui.QImage object" 
+    assert img.format() == QtGui.QImage.Format.Format_RGB32, \
+        "img format must be QImage.Format.Format_RGB32"
+        
     img_size = img.size()
     buffer = img.constBits()
         
@@ -55,15 +63,24 @@ def qt_image_to_array(img):
         "size mismatch: {} != {}".format(n_bits_buffer, n_bits_image) 
         
     assert img.depth() == 32, "unexpected image depth: {}".format(img.depth())
-        
-    return np.ndarray(shape  = (img_size.width(), img_size.height(), img.depth()//8), 
+
+    # Note the different width height parameter order!
+    arr = np.ndarray(shape  = (img_size.height(), img_size.width(), img.depth()//8),
                       buffer = buffer, 
                       dtype  = np.uint8)
 
+    if share_memory:
+        return arr
+    else:
+        return copy.deepcopy(arr)
 
 
-def array_to_qt_image(arr, format = None):
+def array_to_qt_image(arr, share_memory=False, format = None):
     """ Creates QImage from a numpy array.
+
+        If share_memory is True, the numpy array and the QImage is shared.
+        Be carefull: make sure the image is destroyed before the numpy array , 
+        otherwise the image will point to unallocated memory!!
     
         If format is not set it will default to QtGui.QImage.Format.Format_RGB32
     """
@@ -73,12 +90,19 @@ def array_to_qt_image(arr, format = None):
         
     assert arr.dtype == np.uint8, "Array must be of type np.uint8"
     assert arr.ndim == 3, "Array must be width x height x 4 array"
-    arr_width, arr_height, arr_depth = arr.shape
+    
+    # Note the different width height parameter order!        
+    arr_height, arr_width, arr_depth = arr.shape
     assert arr_depth == 4, "Array depth must be 4. Got: {}".format(arr_depth)
-    buffer = arr.data
-        
+    
+    if share_memory:
+        buffer = arr.data
+    else:
+        buffer = copy.deepcopy(arr).data
+    
     qimg = QtGui.QImage(buffer, arr_width, arr_height, format)
     return qimg
+
 
 
 def qt_arr_to_mpl_arr(arr_qt):
@@ -89,6 +113,9 @@ def qt_arr_to_mpl_arr(arr_qt):
     
     """ Saves a (width x height x depth) array to file
     """
+    assert arr_qt.ndim == 3, "arr_qt should be 3 dimensional"
+    assert arr_qt.shape[2] == 4, "arr_qt shape should be (width, height, 4)"
+    assert arr_qt.dtype == np.uint8, "arr_qt should be of type np.uint8"
     arr_mpl = np.ndarray(shape = arr_qt.shape, dtype = np.uint8)
     
     arr_mpl[:,:,MPL_DEPTH_R] = arr_qt[:,:,QT_DEPTH_R]
@@ -113,12 +140,31 @@ def image_array_average(arr1, arr2):
     return arr1 // 2 + arr2 // 2
 
 
-def image_array_abs_diff(arr1, arr2):
+def image_array_abs_diff_8bit(arr1, arr2):
     """ Returns abs(arr1-arr2) for unsigned integers
     """
+    assert arr1.shape == arr2.shape, "array shapes not equal"
+    #mpimg.imsave('/Users/titusjan/Temp/python/arr1_before.8bit.png', arr1, vmin=0, vmax=255)      
+    #mpimg.imsave('/Users/titusjan/Temp/python/arr2_before.8bit.png', arr2, vmin=0, vmax=255)      
+
     diff = np.where( np.greater_equal(arr1, arr2), arr1-arr2, arr2-arr1)
     diff[:,:,QT_DEPTH_A] = 255
+
+    #mpimg.imsave('/Users/titusjan/Temp/python/arr1_after.8bit.png', arr1, vmin=0, vmax=255)      
+    #mpimg.imsave('/Users/titusjan/Temp/python/arr2_after.8bit.png', arr2, vmin=0, vmax=255)      
+    
     return diff
+    
+
+def image_array_abs_diff_16bit(arr1, arr2):
+    """ Returns abs(arr1-arr2) for unsigned integers
+    """
+    diff = np.abs(arr1.astype(np.int16) - arr2.astype(np.int16)).astype(np.uint8)
+    diff[:,:,QT_DEPTH_A] = 255
+    return diff
+    
+image_array_abs_diff = image_array_abs_diff_8bit    
+#image_array_abs_diff = image_array_abs_diff_16bit    
     
 
 def score_rgb(arr):
@@ -146,21 +192,16 @@ def render_qgraphics_scene(qgraphics_scene, width, height, format = None):
 
 if __name__ == '__main__':
 
-    def test1():
-    
-        #img = QtGui.QImage("images/mona_lisa_300x300.jpg")
-        img = QtGui.QImage("images/mona_sister_300x300.jpg")
-        
-        arr = qt_image_to_array(img)
-        save_qt_img_array_fo_file('mona_lisa_out.png', arr)
-        
-    
+ 
     def test():
         
-        img1 = QtGui.QImage("images/mona_lisa_300x300.jpg")
+        #img1 = QtGui.QImage("images/mona_lisa_300x300.jpg")
+        img1 = QtGui.QImage("environment.target.png")
         arr1 = qt_image_to_array(img1)
         sum1 = score_rgb(arr1)
-        img2 = QtGui.QImage("images/mona_sister_300x300.jpg")
+        
+        #img2 = QtGui.QImage("images/mona_sister_300x300.jpg")
+        img2 = QtGui.QImage("environment.individual.png")
         arr2 = qt_image_to_array(img2)
         sum2 = score_rgb(arr2)   
         
@@ -171,7 +212,8 @@ if __name__ == '__main__':
             .format(sum1/max_sum, sum2/max_sum, (sum1+sum2)/2/max_sum) )
         
         avg = image_array_average(arr1, arr2)
-        diff = image_array_abs_diff(arr1, arr2) 
+        #diff = image_array_abs_diff(arr1, arr2) 
+        diff = image_array_abs_diff_8bit(arr1, arr2) 
         
         sum_avg  = score_rgb(avg)
         sum_diff = score_rgb(diff)
@@ -180,10 +222,10 @@ if __name__ == '__main__':
         print ("Sum avg = {}, diff = {}".format(sum_avg, sum_diff))
         print ("Rel sum avg = {:5.3f}, diff = {:5.3f}".format(sum_avg/max_sum, sum_diff/max_sum))
         
-        save_qt_img_array_fo_file('mona_lisa_out.png', diff)
+        save_qt_img_array_fo_file('libimg_mpl.png', diff)
         
         qimg_diff = array_to_qt_image(diff)
-        qimg_diff.save('mona_lisa_qt_out.png')
+        qimg_diff.save('libimg_qt.png')
         
 
 

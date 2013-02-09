@@ -96,7 +96,7 @@ if __name__ == '__main__':
         if alt == 1:
             n_poly = 2
             alpha = 255
-            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (255, 0, 0, alpha)) )
+            chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, x, y, w, h, color = (0, 0, 0, alpha)) )
         elif alt == 2:
             chromos.append( QtGsPolyChromosome.create_random(4, 150, x, y, w, h) )
         else:

@@ -39,6 +39,7 @@ class QtImgEnvironment(Environment):
     def _clear_cache(self):
         self._individual_arr = None
         self._fitness_arr = None
+        logger.debug("cache cleared")
 
     @property
     def individual(self):
@@ -96,6 +97,7 @@ class QtImgEnvironment(Environment):
 if __name__ == '__main__':
 
     import sys
+    import numpy as np
     
     def test():
         
@@ -111,7 +113,20 @@ if __name__ == '__main__':
         n_poly = 1
         chromos = []
         #chromos.append( QtGsPolyChromosome.create_random(n_poly, 100, x, y, w, h, color = (150, 125, 100, 255) ) )
-        chromos.append( QtGsPolyChromosome.create_random(n_poly, 4, x, y, w, h, color = (0, 0, 0, 255) ) )
+        #chromos.append( QtGsPolyChromosome.create_random(n_poly, 4, x, y, w, h, color = (0, 0, 0, 255) ) )
+        
+        margin = 80
+        xmin = x+margin
+        ymin = y+margin
+        xmax = x+w-margin
+        ymax = y+h-margin
+        rect = np.array([ [ [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin] ] ])
+        chromos.append( QtGsPolyChromosome(poly_genes = rect,  
+                                           #color_genes = np.array([[255, 0, 0, 255]], dtype=np.uint8), 
+                                           #color_genes = np.array([[0, 255, 0, 255]], dtype=np.uint8), 
+                                           color_genes = np.array([[0, 0, 255, 255]], dtype=np.uint8), 
+                                           z_genes = np.array([1])) )
+        
         individual = QtGsIndividual( chromos, img_width, img_height)
         
         environment.individual = individual
