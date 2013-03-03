@@ -114,10 +114,16 @@ class QtGsPolyChromosome(Chromosome):
 
         
     def clone(self):
-    
-        noise_poly  = 1.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
-        noise_color = 1.0   * np_rnd.randn(self.n_polygons, 4)
-        noise_z     = 0.0001 * np_rnd.randn(self.n_polygons)
+
+        if False:
+            noise_poly  = 10.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
+            noise_color = 2.5   * np_rnd.randn(self.n_polygons, 4)
+            noise_z     = 0.001 * np_rnd.randn(self.n_polygons)
+        else:
+            noise_poly  = 5.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
+            noise_color = 5.0   * np_rnd.randn(self.n_polygons, 4)
+            noise_z     = 0.0001 * np_rnd.randn(self.n_polygons)
+
     
         new_poly_genes  = self._poly_genes  + noise_poly
         new_color_genes = self._color_genes + noise_color
