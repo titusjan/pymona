@@ -123,7 +123,7 @@ if __name__ == '__main__':
     import os.path
     from libimg import get_image_rectangle, save_qt_img_array_fo_file
     
-    def _old_run(target_image_name):
+    def old_run(target_image_name):
         
         logger.info("Loading target image: {}".format(target_image_name))
         assert os.path.exists(target_image_name), "file not found: {}".format(target_image_name)
@@ -143,13 +143,17 @@ if __name__ == '__main__':
             if gen % 100 == 0:
                 file_name = os.path.join(output_dir, 
                                         'engine.individual.gen_{:05d}.score_{:08.6f}.png'
-                                            .format(gen, engine._indiv_score))
+                                        .format(gen, engine._indiv_score))
+                indiv_image = engine._individual.render_image()
+                logger.info('Saving: {}'.format(file_name))
+                indiv_image.save(file_name)
+                
                 logger.info('Saving: {}'.format(file_name))
                 engine._individual.image.save(file_name)
 
                 file_name = os.path.join(output_dir, 
                                         'engine.fitness.gen_{:05d}.score_{:08.6f}.png'
-                                            .format(gen, engine._indiv_score))
+                                        .format(gen, engine._indiv_score))
                 logger.info('Saving: {}'.format(file_name))
                 engine._fitness_image.save(file_name)
                         
