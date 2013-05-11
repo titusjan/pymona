@@ -16,9 +16,16 @@ from PySide import QtCore, QtGui
 
 from chromosomes import QtGsPolyChromosome
 from individuals import QtGsIndividual
-#from environments import QtImgEnvironment
 from libimg import (qt_image_to_array, array_to_qt_image, image_array_abs_diff, 
                     score_rgb, max_score_rgb, addr)  
+
+        
+def log_array_info(name, arr):
+    row = 150
+    col = 100
+    logger.debug("{:18s}: id = 0x{:x}, data_addr = 0x{:x}, arr[{},{},:] = {}".format(
+        name, id(arr), addr(arr), row, col, arr[row,col,:]))
+            
 
 class Engine(object):
 
@@ -26,90 +33,70 @@ class Engine(object):
         """ Engine that executes the evolution
 
         """
+        self._max_alpha = 200
+        
         self._gen_nr = 0
         self._target_image = target_image
         self._target_arr = qt_image_to_array(target_image)
         self._max_score_rgb = max_score_rgb(self._target_arr)
-        self._individual = self._create_initial_individual(n_poly=3) # one individual for now
+        self._individual = self._create_initial_individual(n_poly=30) 
         self._indiv_score, self._fitness_image = self.score_individual(self._individual)
         
         
+        
     def _create_initial_individual(self, n_poly):
-    
+        """ Creates a single individual to begin with 
+        """
         rect = get_image_rectangle(self._target_image, margin_relative = 0.25)
         
         chromos = []
-        chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect) )
+        chromos.append( QtGsPolyChromosome.create_random(n_poly, 3, rect, 
+                                                         max_alpha = self._max_alpha) )
         
         return QtGsIndividual(chromos, 
                               self._target_image.width(), 
                               self._target_image.height())
                 
- 
+    
     def score_individual(self, individual):
         """ Compares the individual with the target image and assigns a score.
         
             The score is between 0 and 1, lower is better.
             Returns: (score, comparison image) tuple.
         """
-        
-        def log_array_info(name, arr):
-            
-            row = 150
-            col = 100
-            logger.debug("{:18s}: id = 0x{:x}, data_addr = 0x{:x}, arr[{},{},:] = {}".format(
-                name, id(arr), addr(arr), row, col, arr[row,col,:]))
-            
-            
         individual_arr = qt_image_to_array(individual.render_image())
-        log_array_info("individual_arr", individual_arr)
-        log_array_info("self._target_arr", self._target_arr)
-        
         fitness_arr = image_array_abs_diff(self._target_arr, individual_arr)
-        log_array_info("fitness_arr", fitness_arr)
-        
-        from libimg import save_qt_img_array_fo_file
-        
         score = score_rgb(fitness_arr) / self._max_score_rgb
         fitness_image = array_to_qt_image(fitness_arr)
-        
-        #save_qt_img_array_fo_file('fitness_arr_after.png', fitness_arr)  # enabling this line makes the bug disappear
-        log_array_info("fitness_arr", fitness_arr)
-        
-        
         return score, fitness_image
         
  
     def next_generation(self):
         
-        logger.info("Generation = {:5d}, score = {:8.6f}"
-                     .format(self._gen_nr, self._indiv_score))
+        #logger.info("Generation = {:5d}, score = {:8.6f}"
+        #             .format(self._gen_nr, self._indiv_score))
         
         prev_score = self._indiv_score
-        
-        cur_individual = self._individual.clone(sigma_vertex = 25.0,
-                                                sigma_color  = 10.0,
+        cur_individual = self._individual.clone(sigma_vertex = 1.0,
+                                                sigma_color  = 1.0,
                                                 sigma_z      = 0.0,
                                                 min_z        = 0,
                                                 max_z        = 1023, 
                                                 min_alpha    = 0,
-                                                max_alpha    = 255)
+                                                max_alpha    = self._max_alpha)
         cur_score, cur_fitness_image = self.score_individual(cur_individual)
         
         logger.debug("prev_score {}, cur_score {}".format(prev_score, cur_score))
         
         if cur_score < prev_score:
-            logger.debug("using new individual")
+            #logger.debug("using new individual")
             self._indiv_score = cur_score
             self._individual = cur_individual
             self._fitness_image = cur_fitness_image
-            #assert False
         else:
-            logger.debug("using old individual")
+            #logger.debug("using old individual")
             pass
-            #assert False
 
-            
         self._gen_nr += 1
 
 
@@ -123,7 +110,9 @@ if __name__ == '__main__':
     import os.path
     from libimg import get_image_rectangle, save_qt_img_array_fo_file
     
-    def old_run(target_image_name):
+    def run(target_image_name):
+        
+        numpy.random.seed(2)
         
         logger.info("Loading target image: {}".format(target_image_name))
         assert os.path.exists(target_image_name), "file not found: {}".format(target_image_name)
@@ -140,7 +129,7 @@ if __name__ == '__main__':
         for gen in range(n_generations):
             engine.next_generation()
             
-            if gen % 100 == 0:
+            if gen % 125 == 0:
                 file_name = os.path.join(output_dir, 
                                         'engine.individual.gen_{:05d}.score_{:08.6f}.png'
                                         .format(gen, engine._indiv_score))
@@ -148,19 +137,16 @@ if __name__ == '__main__':
                 logger.info('Saving: {}'.format(file_name))
                 indiv_image.save(file_name)
                 
-                logger.info('Saving: {}'.format(file_name))
-                engine._individual.image.save(file_name)
-
+                fitness_image = engine._fitness_image
+            
                 file_name = os.path.join(output_dir, 
-                                        'engine.fitness.gen_{:05d}.score_{:08.6f}.png'
-                                        .format(gen, engine._indiv_score))
+                                        'engine.fitness.gen_{:05d}.score_{:08.6f}.qt.png'
+                                            .format(gen, engine._indiv_score))
                 logger.info('Saving: {}'.format(file_name))
-                engine._fitness_image.save(file_name)
-                        
- 
-
+                fitness_image.save(file_name)
+                
     
-    def run(target_image_name):
+    def __run(target_image_name):
         
         numpy.random.seed(2)
         
