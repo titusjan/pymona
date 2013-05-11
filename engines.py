@@ -33,15 +33,15 @@ class Engine(object):
         """ Engine that executes the evolution
 
         """
-        self._max_alpha = 200
+        self._max_alpha = 100
         
         self._gen_nr = 0
         self._target_image = target_image
         self._target_arr = qt_image_to_array(target_image)
         self._max_score_rgb = max_score_rgb(self._target_arr)
-        self._individual = self._create_initial_individual(n_poly=30) 
+        self._individual = self._create_initial_individual(n_poly=100) 
         self._indiv_score, self._fitness_image = self.score_individual(self._individual)
-        
+        self._score_changed = True
         
         
     def _create_initial_individual(self, n_poly):
@@ -77,24 +77,24 @@ class Engine(object):
         #             .format(self._gen_nr, self._indiv_score))
         
         prev_score = self._indiv_score
-        cur_individual = self._individual.clone(sigma_vertex = 1.0,
-                                                sigma_color  = 1.0,
-                                                sigma_z      = 0.0,
+        cur_individual = self._individual.clone(sigma_vertex = 5.0,
+                                                sigma_color  = 2.0,
+                                                sigma_z      = 1.0,
                                                 min_z        = 0,
                                                 max_z        = 1023, 
                                                 min_alpha    = 0,
                                                 max_alpha    = self._max_alpha)
         cur_score, cur_fitness_image = self.score_individual(cur_individual)
         
-        logger.debug("prev_score {}, cur_score {}".format(prev_score, cur_score))
+        #logger.debug("prev_score {}, cur_score {}".format(prev_score, cur_score))
         
         if cur_score < prev_score:
-            #logger.debug("using new individual")
+            self._score_changed = True
             self._indiv_score = cur_score
             self._individual = cur_individual
             self._fitness_image = cur_fitness_image
         else:
-            #logger.debug("using old individual")
+            self._score_changed = False
             pass
 
         self._gen_nr += 1
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     import numpy.random
     import os.path
-    from libimg import get_image_rectangle, save_qt_img_array_fo_file
+    from libimg import get_image_rectangle
     
     def run(target_image_name):
         
@@ -129,7 +129,8 @@ if __name__ == '__main__':
         for gen in range(n_generations):
             engine.next_generation()
             
-            if gen % 125 == 0:
+            #if gen % 125 == 0:
+            if engine._score_changed:
                 file_name = os.path.join(output_dir, 
                                         'engine.individual.gen_{:05d}.score_{:08.6f}.png'
                                         .format(gen, engine._indiv_score))
@@ -142,64 +143,9 @@ if __name__ == '__main__':
                 file_name = os.path.join(output_dir, 
                                         'engine.fitness.gen_{:05d}.score_{:08.6f}.qt.png'
                                             .format(gen, engine._indiv_score))
-                logger.info('Saving: {}'.format(file_name))
+                #logger.info('Saving: {}'.format(file_name))
                 fitness_image.save(file_name)
                 
-    
-    def __run(target_image_name):
-        
-        numpy.random.seed(2)
-        
-        logger.info("Loading target image: {}".format(target_image_name))
-        assert os.path.exists(target_image_name), "file not found: {}".format(target_image_name)
-        target_image = QtGui.QImage(target_image_name).convertToFormat(QtGui.QImage.Format.Format_RGB32)
-
-        output_dir = 'output'
-        file_name = os.path.join(output_dir, 'engine.target.png')
-        logger.info('Saving: {}. Qimage cachekey: {}'.format(file_name, target_image.cacheKey()))
-        target_image.save(file_name)
-    
-        engine = Engine(target_image)
-
-        n_generations = 1
-        for gen in range(n_generations):
-            if True or gen % 25 == 0:
-                
-                file_name = os.path.join(output_dir, 
-                                        'engine.individual.gen_{:05d}.score_{:08.6f}.qt.png'
-                                            .format(gen, engine._indiv_score))
-                indiv_image = engine._individual.render_image()  # Disabling this line also makes the bug disappear
-                logger.info('Saving: {}. Qimage cachekey: {}'.format(file_name, indiv_image.cacheKey()))
-                indiv_image.save(file_name)
-                
-                if True: # or setting this to false
-                    file_name = os.path.join(output_dir, 
-                                            'engine.individual.gen_{:05d}.score_{:08.6f}.mpl.png'
-                                                .format(gen, engine._indiv_score))
-                    logger.info('Saving: {}'.format(file_name))
-                    save_qt_img_array_fo_file(file_name, qt_image_to_array(indiv_image))
-                    
-
-                fitness_image = engine._fitness_image
-            
-                file_name = os.path.join(output_dir, 
-                                        'engine.fitness.gen_{:05d}.score_{:08.6f}.qt.png'
-                                            .format(gen, engine._indiv_score))
-                logger.info('Saving: {}. Qimage cachekey: {}'.format(file_name, fitness_image.cacheKey()))
-                fitness_image.save(file_name)
-                
-                            
-                if True:
-                    file_name = os.path.join(output_dir, 
-                                            'engine.fitness.gen_{:05d}.score_{:08.6f}.mpl.png'
-                                                .format(gen, engine._indiv_score))
-                    logger.info('Saving: {}'.format(file_name))
-                    save_qt_img_array_fo_file(file_name, qt_image_to_array(fitness_image))
-            
-            #engine.next_generation()  # disabling this makes a difference?
-            
-                        
- 
         
     def main():
     
@@ -217,7 +163,6 @@ if __name__ == '__main__':
         args = parser.parse_args()    
             
         logging.basicConfig(level = args.log_level.upper(), stream = sys.stderr, 
-            #format='%(filename)20s:%(lineno)-4d : %(levelname)-7s: %(message)s')
             format='%(asctime)s: %(filename)16s:%(lineno)-4d : %(levelname)-6s: %(message)s')
             
         logger.info('Started...')
