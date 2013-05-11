@@ -7,7 +7,6 @@ from __future__ import division
 
 import numpy as np
 import numpy.random as np_rnd
-import types
 import logging
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class Chromosome(object):
     pass
     
 class QtGsChromosome(Chromosome):
-    """ Abstract base class where each gene can be representated as a QtGui.QGraphicsItem
+    """ Abstract base class where each gene can be represented as a QtGui.QGraphicsItem
     
         All genes are the same size and represent the same type of graphics item
     """ 
@@ -35,9 +34,12 @@ class QtGsChromosome(Chromosome):
     
     
 class QtGsPolyChromosome(Chromosome):
+    
+    RGB = slice(0, 3)
+    ALPHA = 3
 
     def __init__(self, poly_genes, color_genes, z_genes):
-        """ Class where each gene can be representated as a polygon (QGraphicsPolyItem).
+        """ Class where each gene can be represented as a polygon (QGraphicsPolyItem).
         
             Each polygon has a color and a z-value (depth).
             All polygons have the same number of vertices. 
@@ -54,8 +56,10 @@ class QtGsPolyChromosome(Chromosome):
         
         assert color_genes.dtype == np.uint8, "Color genes must be of type np.uint8"
         
-        assert poly_genes.ndim == 3, "poly_genes must be 3D np.array (n_genes, n_vertices, 2)"
-        assert poly_genes.shape[2] == 2, "poly_genes 3rd dimension must have size 2 (x&y coordinatess)."
+        assert poly_genes.ndim == 3, \
+            "poly_genes must be 3D np.array (n_genes, n_vertices, 2)"
+        assert poly_genes.shape[2] == 2, \
+            "poly_genes 3rd dimension must have size 2 (x&y coordinates)."
 
         self._n_colors = color_genes.shape[0]
         assert color_genes.shape == (1,4) or color_genes.shape == (self.n_polygons,4), \
@@ -113,34 +117,56 @@ class QtGsPolyChromosome(Chromosome):
         return qitems
 
         
-    def clone(self):
+    def clone(self, 
+              sigma_vertex = 0.0, 
+              sigma_color  = 0.0,
+              sigma_z      = 0.0,
+              min_z        = 0,
+              max_z        = 1023, 
+              min_alpha    = 0,
+              max_alpha    = 255):
+        """ Clones a chromosome and adds normal distributed noise.
+        
+            :param sigma_vertex: standard deviation of noise for polygon vertices
+            :param sigma_color:  standard deviation of color for polygon vertices
+            :param sigma_z:      standard deviation of depth for polygon vertices
+            :param min_z:        minimum depth of the polygons
+            :param max_z:        maximum depth of the polygons
+            :param min_alpha:    minimum transparency value of the polygons (must be >= 0)
+            :param max_alpha:    maximum transparency value of the polygons (must be =< 255)
+        
+        """
+        assert min_alpha >=0, "min_alpha should be >= 0"
+        assert max_alpha <=255, "max_alpha should be <= 255"
 
-        if False:
-            noise_poly  = 10.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
-            noise_color = 2.5   * np_rnd.randn(self.n_polygons, 4)
-            noise_z     = 0.001 * np_rnd.randn(self.n_polygons)
+        if True:
+            noise_poly  = sigma_vertex * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
+            noise_color = sigma_color  * np_rnd.randn(self.n_polygons, 4)
+            noise_z     = sigma_z      * np_rnd.randn(self.n_polygons)
         else:
             noise_poly  = 5.0   * np_rnd.randn(self.n_polygons, self.n_vertices, 2)
             noise_color = 5.0   * np_rnd.randn(self.n_polygons, 4)
             noise_z     = 0.0001 * np_rnd.randn(self.n_polygons)
-
     
-        new_poly_genes  = self._poly_genes  + noise_poly
-        new_color_genes = self._color_genes + noise_color
-        new_z_genes     = self._z_genes     + noise_z
-
+        new_poly_genes  = self._poly_genes.copy()  + noise_poly
+        new_color_genes = self._color_genes.copy() + noise_color
+        new_z_genes     = self._z_genes.copy()     + noise_z
         
-        np.clip(new_color_genes, 0, 255, out = new_color_genes)
-        np.clip(new_z_genes, 0.0, 1.0, out = new_z_genes)
-
+        np.clip(new_color_genes[:,self.RGB], 0, 255, out = new_color_genes[:,self.RGB])
+        np.clip(new_color_genes[:,self.ALPHA], min_alpha, max_alpha, out = new_color_genes[:,self.ALPHA])
+        np.clip(new_z_genes, min_z, max_z, out = new_z_genes)
 
         return QtGsPolyChromosome(new_poly_genes, new_color_genes.astype(np.uint8), new_z_genes)
         
     
     @staticmethod
     def create_random(n_polygons, n_vertices, rectangle, 
-                      color = None, 
-                      z     = None):
+                      color     = None,
+                      z         = None,
+                      min_z     = 0,
+                      max_z     = 1023, 
+                      min_alpha = 0,
+                      max_alpha = 255):
         """ Creates random QtGsPolyChromosome.
         
             rectangle should be a (x, y, width, height) tuple.
@@ -152,7 +178,7 @@ class QtGsPolyChromosome(Chromosome):
             a 1 by 4 array or (r,g,b,a) tuple and all polygons will have that 
             color.
             
-            If z is None it will be set randomly between 0 and 1, otherwise it 
+            If z is None it will be set uniform randomly between min_z and max_z, otherwise it 
             must be a float and all polygons will have that z value (depth).
         """
         
@@ -170,7 +196,7 @@ class QtGsPolyChromosome(Chromosome):
             color_genes = np.array(color).reshape(1,4).astype(np.uint8)
             
         if z == None:
-            z_genes = np_rnd.rand(n_polygons) 
+            z_genes = (max_z - min_z) * np_rnd.rand(n_polygons) + min_z 
         else:
             z_genes = np.array(z).reshape(1)
             

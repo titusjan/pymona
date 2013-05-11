@@ -41,19 +41,23 @@ class QtGsIndividual(Individual):
         scene_rect = QtCore.QRectF(0, 0, self._img_width + 1, self._img_height + 1)
         self._graphics_scene = QtGui.QGraphicsScene(scene_rect)
         #self._graphics_scene.setBackgroundBrush(Qt.ligthGray)
-        self._graphics_scene.setBackgroundBrush(QtGui.QColor(127, 127, 127))
+        #self._graphics_scene.setBackgroundBrush(QtGui.QColor(127, 127, 127))
+        self._graphics_scene.setBackgroundBrush(QtGui.QColor(0, 255, 0))
         
         self._chromosomes = chromosomes
         self._add_chromosomes_to_scene()
 
         
-    def clone(self):
-        new_chromosomes = [chr.clone() for chr in self._chromosomes]
+    def clone(self, **kwargs):
+        """ Clones a chromosome and adds normal distributed noise.
+        
+            The **kwargs are passed on to the chromosome.clone() method.
+        """
+        new_chromosomes = [chrom.clone(**kwargs) for chrom in self._chromosomes]
         return QtGsIndividual(new_chromosomes, self._img_width, self._img_height)
         
 
-    @property
-    def image(self):
+    def render_image(self):
         return render_qgraphics_scene(self.graphics_scene, self._img_width, self._img_height)
         
     @property
@@ -75,7 +79,6 @@ class QtGsIndividual(Individual):
 if __name__ == '__main__':
 
     import sys
-    from libimg import render_qgraphics_scene
 
     def test():
     

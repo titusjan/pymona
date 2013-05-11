@@ -1,1 +1,4 @@
 Look at QPainter::CompositionMode
+
+Use QCoreApplication for non GUI program as it does not depend on QtGui.
+
