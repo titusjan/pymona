@@ -28,13 +28,13 @@ COL_NUM_GENES = 1
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self, target_image = None):
+    def __init__(self, parent = None, target_image = None):
     
-        super(MainWindow, self).__init__()
+        super(MainWindow, self).__init__(parent=parent)
 
-        self.setup_menu()
-        self.setup_models()
-        self.setup_views()
+        self._setup_menu()
+        self._setup_models()
+        self._setup_views()
 
         self.setWindowTitle("PyMona")
         self.setGeometry(50, 50, 800, 600)
@@ -43,7 +43,7 @@ class MainWindow(QtGui.QMainWindow):
         #    self.openFiles(file_names)             
         
 
-    def setup_menu(self):
+    def _setup_menu(self):
         """ Sets up the main menu.
         """
         file_menu = QtGui.QMenu("&File", self)
@@ -62,122 +62,46 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(help_menu)
 
         
-    def setup_models(self):
+    def _setup_models(self):
         """ Sets up table models """
-        
-        self.model = QtGui.QStandardItemModel(0, 2, self)
-        self.model.setHeaderData(COL_ID,         QtCore.Qt.Horizontal, "ID")
-        self.model.setHeaderData(COL_NUM_GENES,  QtCore.Qt.Horizontal, "# genes")
-        
-        self.graphics_scene = QtGui.QGraphicsScene(self)
-        
-        #self.graphics_scene.setSceneRect(-20, -20, 420, 340)
-        
-        
-        self.graphics_scene.setSceneRect(0, 0, 300, 300) # TODO 300x200
-
-        if True:        
-            # Draw black boundary around the scene rect
-            #self.graphics_scene.addRect(self.graphics_scene.sceneRect())
-            bw = 2.0 # border width
-            hbw = bw / 4.0
-            pen = QtGui.QPen()
-            pen.setWidth(bw)
-            sr = self.graphics_scene.sceneRect()
-            if False:
-                self.graphics_scene.addRect(sr.x()+hbw, sr.y()+hbw, 
-                                            sr.width()-bw, sr.height()-bw, 
-                                            pen=pen)
-            else:
-                self.graphics_scene.addRect(sr.x()-hbw, sr.y()-hbw, 
-                                            sr.width(), sr.height(), 
-                                            pen=pen)
-
-            logger.debug("self.graphics_scene.sceneRect(): {}".format(self.graphics_scene.sceneRect()))       
-        
-            target_pixmap = QtGui.QPixmap("images/mona_lisa_300x300.jpg")
-            #self.graphics_scene.addPixmap(target_pixmap)
-            
-            color = QtGui.QColor(255, 0, 0, 255)
-            pen = QtGui.QPen(color)
-            pen.setWidth(5)
-            pen.setStyle(QtCore.Qt.NoPen)
-            self.graphics_scene.addEllipse(50, 60, 80, 60, 
-                pen = pen, 
-                brush = QtGui.QBrush(color))
-
-            color = QtGui.QColor(0, 255, 0, 255)
-            pen = QtGui.QPen(color)
-            pen.setWidth(5)
-            pen.setStyle(QtCore.Qt.NoPen)
-            self.graphics_scene.addEllipse(150, 60, 60, 80, 
-                pen = pen, 
-                brush = QtGui.QBrush(color))
-
-            color = QtGui.QColor(0, 0, 255, 255)
-            pen = QtGui.QPen(color)
-            pen.setWidth(5)
-            pen.setStyle(QtCore.Qt.NoPen)
-            self.graphics_scene.addEllipse(50, 160, 70, 70, 
-                pen = pen, 
-                brush = QtGui.QBrush(color))
-
-        
-        brush_color = QtGui.QColor(100, 150, 200, 255)
-        pen_color =  QtGui.QColor(200, 0, 0, 255)
-        pen = QtGui.QPen(pen_color)
-        pen.setWidth(0)
-        #pen.setStyle(QtCore.Qt.NoPen)
-        self.graphics_scene.addRect(0, 0, 10, 10, 
-            pen = pen, 
-            brush = QtGui.QBrush(brush_color))
-        
-            
-    def load_model(self, file_name):
-        """ Loads the model data from a HDF-5 file"""
-        assert False, "Not yet implemented"
-        logger.debug('loading data from: {}'.format(file_name))
         pass
 
 
-    def setup_views(self):
+    def _setup_views(self):
     
-        central_splitter = QtGui.QSplitter(self, orientation = Qt.Vertical)
+        central_splitter = QtGui.QSplitter(self, orientation = Qt.Horizontal)
         central_splitter.setStretchFactor(0, 0)
         central_splitter.setStretchFactor(1, 1)
         self.setCentralWidget(central_splitter)
-        
-        # -- canvas --
 
-        results_group_box = QtGui.QGroupBox("Results")
-        central_splitter.addWidget(results_group_box)
+        # -- controls --
+        
+        controls_widget = QtGui.QWidget()
+        central_splitter.addWidget(controls_widget)
+        
+        controls_layout = QtGui.QVBoxLayout()
+        controls_widget.setLayout(controls_layout)
+        
+
+        controls_group_box = QtGui.QGroupBox("Controls")
+        controls_layout.addWidget(controls_group_box)
+        
+        # -- results --
+
+        results_widget = QtGui.QWidget()
+        central_splitter.addWidget(results_widget)
         
         results_layout = QtGui.QVBoxLayout()
-        results_group_box.setLayout(results_layout)
+        results_widget.setLayout(results_layout)
 
-        self.graphics_view = QtGui.QGraphicsView(self.graphics_scene)
-        results_layout.addWidget(self.graphics_view)
+        results_group_box = QtGui.QGroupBox("Results")
+        results_layout.addWidget(results_group_box)
 
-        # -- table --
+
+        #self.graphics_view = QtGui.QGraphicsView(self.graphics_scene)
+        #results_layout.addWidget(self.graphics_view)
+
         
-        data_group_box = QtGui.QGroupBox("Data")
-        central_splitter.addWidget(data_group_box)
-        
-        data_layout = QtGui.QVBoxLayout()
-        data_group_box.setLayout(data_layout)
-        
-        self.genes_table = QtGui.QTableView()  
-        self.genes_table.setModel(self.model)
-        self.genes_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers) 
-        self.genes_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.genes_table.setColumnWidth(COL_ID, 400)
-        self.genes_table.setColumnWidth(COL_NUM_GENES, 200)
-        self.genes_table.horizontalHeader().setStretchLastSection(True)
-        
-        selection_model = self.genes_table.selectionModel()
-        #selection_model.selectionChanged.connect(self.onSelectionChanged)
-        
-        data_layout.addWidget(self.genes_table)
 
         
     def __not_used__openFiles(self, file_names=None):
@@ -188,22 +112,26 @@ class MainWindow(QtGui.QMainWindow):
         for file_name in file_names:
             logger.info("Loading data from: {!r}".format(file_name))
             #self.load_model(file_name)
-
-
             
-    def test(self):
-        """ Simple function used to test stuff during run-time
-        """
-        logger.info('self.test()')
-        logger.info('self.test() done...')
-        
-        
+    def load_model(self, file_name):
+        """ Loads the model data from a HDF-5 file"""
+        assert False, "Not yet implemented"
+        logger.debug('loading data from: {}'.format(file_name))
+        pass
             
     def about(self):
         QtGui.QMessageBox.about(self, "About %s" % PROGRAM_NAME, ABOUT_MESSAGE)
 
     def quit_application(self):
         self.close()
+
+    def test(self):
+        """ Simple function used to test stuff during run-time
+        """
+        logger.info('self.test()')
+        logger.info('self.test() done...')
+        
+
         
 ##################
 ## Main program ##
